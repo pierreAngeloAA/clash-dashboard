@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  body {
+    @apply text-slate-800;
+    background-image: url('/clash-bg.webp');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(248, 250, 252, 0.78);
+    z-index: -1;
+    pointer-events: none;
+  }
+}
+
+@layer components {
+  .input-base {
+    @apply w-full px-4 py-2.5 text-sm rounded-lg border border-slate-200 bg-white
+           placeholder:text-slate-400 focus:outline-none focus:ring-2
+           focus:ring-brand-500/30 focus:border-brand-500 transition;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
+           text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs
+           font-medium bg-slate-100 text-slate-700;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1; border-radius: 999px; border: 2px solid #f8fafc;
+}
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
