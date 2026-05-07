@@ -1,6 +1,11 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DIST_DIR = path.resolve(__dirname, '../dist');
 
 const PORT = Number(process.env.PORT) || 3001;
 const COC_TOKEN = process.env.COC_TOKEN;
@@ -114,6 +119,14 @@ app.delete('/api/cache', (_req, res) => {
   res.json({ ok: true });
 });
 
+// En producción servimos el build del frontend desde el mismo proceso.
+// El SPA fallback manda cualquier ruta no-/api a index.html para que el
+// router del cliente la maneje.
+app.use(express.static(DIST_DIR));
+app.get(/^(?!\/api).*/, (_req, res) => {
+  res.sendFile(path.join(DIST_DIR, 'index.html'));
+});
+
 app.listen(PORT, () => {
-  console.log(`[server] CoC proxy escuchando en http://localhost:${PORT}`);
+  console.log(`[server] escuchando en puerto ${PORT}`);
 });
