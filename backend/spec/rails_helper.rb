@@ -66,7 +66,8 @@ RSpec.configure do |config|
   # behaviour is considered legacy and will be removed in a future version.
   #
   # To enable this behaviour uncomment the line below.
-  # config.infer_spec_type_from_file_location!
+  # Los specs de spec/requests son de tipo :request sin tener que declararlo.
+  config.infer_spec_type_from_file_location!
 
   # Filter lines from Rails gems in backtraces.
   config.filter_rails_from_backtrace!

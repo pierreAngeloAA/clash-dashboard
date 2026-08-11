@@ -263,7 +263,23 @@ Devise.setup do |config|
   # should add them to the navigational formats lists.
   #
   # The "*/*" below is required to match Internet Explorer requests.
-  # config.navigational_formats = ['*/*', :html, :turbo_stream]
+  # API pura: no hay formatos de navegacion, asi que un fallo de autenticacion
+  # responde 401 en vez de intentar redirigir a una pantalla de login.
+  config.navigational_formats = []
+
+  config.warden do |manager|
+    manager.failure_app = JsonFailureApp
+  end
+
+  config.jwt do |jwt|
+    jwt.secret = ENV.fetch("JWT_SECRET") { Rails.application.secret_key_base }
+
+    # Solo el login emite token y solo el logout lo revoca.
+    jwt.dispatch_requests = [ [ "POST", %r{^/api/v1/login$} ] ]
+    jwt.revocation_requests = [ [ "DELETE", %r{^/api/v1/logout$} ] ]
+
+    jwt.expiration_time = 12.hours.to_i
+  end
 
   # The default HTTP method used to sign out a resource. Default is :delete.
   config.sign_out_via = :delete

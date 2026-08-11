@@ -1,10 +1,23 @@
 Rails.application.routes.draw do
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
-
-  # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
-  # Can be used by load balancers and uptime monitors to verify that the app is live.
+  # Devuelve 200 si la app arranca sin excepciones. Lo usan los balanceadores y
+  # los monitores de uptime.
   get "up" => "rails/health#show", as: :rails_health_check
 
-  # Defines the root path route ("/")
-  # root "posts#index"
+  # Registra el mapeo de Devise sin publicar ninguna de sus rutas: no hay
+  # registro publico ni recuperacion de contraseña por ahora. Las rutas de
+  # sesion se declaran a mano mas abajo, dentro del namespace de la API.
+  devise_for :users, skip: :all
+
+  namespace :api do
+    namespace :v1 do
+      devise_scope :user do
+        post "login", to: "sessions#create"
+        delete "logout", to: "sessions#destroy"
+
+        # Dentro del scope porque el controlador hereda de Devise y necesita el
+        # mapping en el entorno de la peticion.
+        get "me", to: "sessions#show"
+      end
+    end
+  end
 end
