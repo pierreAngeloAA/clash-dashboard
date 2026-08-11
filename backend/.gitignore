@@ -1,0 +1,25 @@
+# Rails no genero este archivo porque la app se creo con --skip-git, que ademas
+# de no inicializar el repositorio omite el .gitignore.
+
+# Archivos temporales y de arranque. El cache de bootsnap son miles de archivos
+# binarios que se regeneran solos.
+/.bundle
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+
+# Almacenamiento local de Active Storage
+/storage/*
+!/storage/.keep
+
+# Variables de entorno con secretos
+/.env
+/.env.*
+!/.env.example
+
+# La master key nunca se versiona
+/config/master.key
+/config/credentials/*.key
+
+.DS_Store
