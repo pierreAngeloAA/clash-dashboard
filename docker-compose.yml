@@ -1,0 +1,87 @@
+# Stack de desarrollo completo. Los cuatro servicios levantan con:
+#
+#   docker compose up
+#
+# Los tres servicios de aplicacion montan su codigo como volumen, asi que
+# editar en el editor recarga dentro del contenedor sin reconstruir la imagen.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: clash_dashboard_development
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      # 5433 en el host porque esta maquina ya corre un PostgreSQL 16 nativo
+      # ocupando el 5432.
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    environment:
+      DATABASE_HOST: db
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
+      # Sin esto Devise firma con secret_key_base, que en desarrollo se regenera
+      # y invalidaria los tokens ya emitidos en cada arranque.
+      JWT_SECRET: clash_dev_secret_change_in_production
+      # Origen que rack-cors deja pasar (config/initializers/cors.rb).
+      FRONTEND_URL: http://localhost:5173
+    ports:
+      # Configurable porque el 3000 es un puerto disputado: si tenes otro Rails
+      # local escuchando ahi, levanta con BACKEND_PORT=3002 docker compose up
+      - "${BACKEND_PORT:-3000}:3000"
+    volumes:
+      - ./backend:/rails
+      # Volumen anonimo: evita que el bind mount de arriba tape las gemas.
+      - bundle_cache:/usr/local/bundle
+    depends_on:
+      db:
+        condition: service_healthy
+
+  coc-proxy:
+    build: ./coc-proxy
+    # El COC_TOKEN va aparte porque esta atado a una IP y no se versiona.
+    # Crealo con: cp coc-proxy/.env.example coc-proxy/.env
+    env_file:
+      - path: ./coc-proxy/.env
+        required: false
+    environment:
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./coc-proxy:/app
+      - /app/node_modules
+
+  frontend:
+    build: ./frontend
+    environment:
+      # Destino del proxy /api de Vite: dentro de la red de compose el host es
+      # el nombre del servicio, no localhost.
+      VITE_PROXY_TARGET: http://coc-proxy:3001
+      # Rails todavia no se consume desde el frontend; queda listo para cuando
+      # se conecte el login.
+      VITE_API_URL: http://localhost:3000/api/v1
+      VITE_OPEN: "false"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+      - coc-proxy
+
+volumes:
+  db_data:
+  bundle_cache:

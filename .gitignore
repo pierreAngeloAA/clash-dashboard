@@ -3,7 +3,7 @@ dist
 dist-ssr
 .env
 .env.local
-server/.env
+coc-proxy/.env
 .vscode
 .DS_Store
 *.log

@@ -1,6 +1,6 @@
 /**
  * Cliente del proxy local que consume la API de Clash of Clans.
- * El token vive solo en el servidor (server/.env).
+ * El token vive solo en el servidor (coc-proxy/.env).
  */
 
 const normalizeTag = (tag) => {

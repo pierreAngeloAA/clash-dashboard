@@ -1,11 +1,16 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DIST_DIR = path.resolve(__dirname, '../dist');
+// El build vive en el repo del frontend, que es una carpeta hermana. En Docker
+// el frontend es otro contenedor y no hay dist que servir, por eso es opcional.
+const DIST_DIR = process.env.DIST_DIR
+  ? path.resolve(process.env.DIST_DIR)
+  : path.resolve(__dirname, '../frontend/dist');
 
 const PORT = Number(process.env.PORT) || 3001;
 const COC_TOKEN = process.env.COC_TOKEN;
@@ -13,7 +18,7 @@ const CACHE_TTL_MS = Number(process.env.CACHE_TTL_MS) || 10 * 60 * 1000;
 const BASE_URL = 'https://api.clashofclans.com/v1';
 
 if (!COC_TOKEN) {
-  console.error('[server] Falta COC_TOKEN en server/.env');
+  console.error('[server] Falta COC_TOKEN en coc-proxy/.env');
   process.exit(1);
 }
 
@@ -122,10 +127,19 @@ app.delete('/api/cache', (_req, res) => {
 // En producción servimos el build del frontend desde el mismo proceso.
 // El SPA fallback manda cualquier ruta no-/api a index.html para que el
 // router del cliente la maneje.
-app.use(express.static(DIST_DIR));
-app.get(/^(?!\/api).*/, (_req, res) => {
-  res.sendFile(path.join(DIST_DIR, 'index.html'));
-});
+//
+// En desarrollo quien sirve el frontend es Vite, y montar el fallback sin dist
+// haria que toda ruta no-/api respondiera un error de sendFile en vez de un 404
+// honesto. Por eso solo se registra si el build existe.
+if (fs.existsSync(path.join(DIST_DIR, 'index.html'))) {
+  app.use(express.static(DIST_DIR));
+  app.get(/^(?!\/api).*/, (_req, res) => {
+    res.sendFile(path.join(DIST_DIR, 'index.html'));
+  });
+  console.log(`[server] sirviendo el build del frontend desde ${DIST_DIR}`);
+} else {
+  console.log('[server] sin build del frontend: solo se exponen las rutas /api');
+}
 
 app.listen(PORT, () => {
   console.log(`[server] escuchando en puerto ${PORT}`);
