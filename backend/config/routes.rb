@@ -18,6 +18,9 @@ Rails.application.routes.draw do
         # mapping en el entorno de la peticion.
         get "me", to: "sessions#show"
       end
+
+      # Lectura publica del progreso; escribir exige sesion.
+      resources :accounts, only: %i[index show]
     end
   end
 end

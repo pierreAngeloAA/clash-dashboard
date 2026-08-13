@@ -1,6 +1,16 @@
 class ApplicationController < ActionController::API
   include ActionController::MimeResponds
 
+  # El nombre del modelo llega en ingles desde ActiveRecord. Sin esto el 404
+  # responde "No se encontro account.", mezclando los dos idiomas en un mensaje
+  # que ve el usuario final.
+  NOMBRE_DEL_MODELO = {
+    "Account" => "la cuenta",
+    "AccountItem" => "el elemento",
+    "GameItem" => "el elemento del catalogo",
+    "User" => "el usuario"
+  }.freeze
+
   rescue_from ActiveRecord::RecordNotFound, with: :no_encontrado
   rescue_from ActiveRecord::RecordInvalid, with: :invalido
 
@@ -22,8 +32,9 @@ class ApplicationController < ActionController::API
   end
 
   def no_encontrado(excepcion)
-    render json: { error: "No se encontro #{excepcion.model&.underscore || 'el recurso'}." },
-      status: :not_found
+    nombre = NOMBRE_DEL_MODELO.fetch(excepcion.model, "el recurso")
+
+    render json: { error: "No se encontro #{nombre}." }, status: :not_found
   end
 
   def invalido(excepcion)
