@@ -22,6 +22,7 @@ class PoblarCuenta
       next if disponibilidad.nil?
 
       creados += crear_faltantes(game_item, disponibilidad)
+      subir_topes(game_item, disponibilidad)
     end
 
     creados
@@ -69,5 +70,22 @@ class PoblarCuenta
     end
 
     creados
+  end
+
+  # Subir de ayuntamiento no solo habilita elementos nuevos: tambien sube el tope
+  # de los que la cuenta ya tenia. Sin esto un canon de una cuenta que paso de
+  # TH15 a TH16 seguiria diciendo que su maximo es el de TH15, y el porcentaje de
+  # progreso quedaria inflado.
+  #
+  # El tope solo sube. Bajar de ayuntamiento no le quita niveles a lo que ya esta
+  # construido, y ademas dejaria elementos con current_level mayor que su maximo.
+  #
+  # Se actualiza en bloque porque subir el tope no puede invalidar nada: el nivel
+  # actual ya era menor o igual al tope anterior, que es menor que el nuevo.
+  def subir_topes(game_item, disponibilidad)
+    account.account_items
+      .where(game_item: game_item)
+      .where(max_level: ...disponibilidad[:max_level])
+      .update_all(max_level: disponibilidad[:max_level])
   end
 end

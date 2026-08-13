@@ -40,5 +40,11 @@ module Backend
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
+
+    # La app es en español y los mensajes de validacion los ve el usuario final
+    # en el panel. El fallback a ingles cubre las traducciones que solo existen
+    # en su locale original, como las de Devise.
+    config.i18n.default_locale = :es
+    config.i18n.fallbacks = [ :en ]
   end
 end

@@ -127,6 +127,34 @@ RSpec.describe PoblarCuenta do
       expect(cuenta.defensas.first.current_level).to eq(8)
     end
 
+    it "sube el tope de lo que la cuenta ya tenia al subir de ayuntamiento" do
+      create(:game_item, :con_disponibilidad,
+        nombre: "Canon",
+        max_level: 21,
+        por_town_hall: { 9 => { cantidad: 1, max_level: 13 }, 15 => { cantidad: 1, max_level: 21 } })
+      cuenta = create(:account, town_hall: 9)
+      cuenta.defensas.first.update!(current_level: 13)
+
+      cuenta.update!(town_hall: 15)
+      cuenta.poblar_inventario
+
+      expect(cuenta.defensas.first.reload.max_level).to eq(21)
+    end
+
+    it "no baja el tope al bajar de ayuntamiento" do
+      create(:game_item, :con_disponibilidad,
+        nombre: "Canon",
+        max_level: 21,
+        por_town_hall: { 9 => { cantidad: 1, max_level: 13 }, 15 => { cantidad: 1, max_level: 21 } })
+      cuenta = create(:account, town_hall: 15)
+      cuenta.defensas.first.update!(current_level: 20)
+
+      cuenta.update!(town_hall: 9)
+      cuenta.poblar_inventario
+
+      expect(cuenta.defensas.first.reload.max_level).to eq(21)
+    end
+
     it "agrega lo nuevo al subir de ayuntamiento" do
       create(:game_item, nombre: "Canon")
       cuenta = create(:account, town_hall: 9)

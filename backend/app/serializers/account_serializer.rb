@@ -44,22 +44,7 @@ class AccountSerializer
   # los niveles del catalogo, asi que serializar aca no dispara consultas extra.
   def secciones
     account.secciones.transform_values do |items|
-      items.map { |item| item_json(item) }
+      items.map { |item| AccountItemSerializer.new(item).call }
     end
-  end
-
-  def item_json(item)
-    {
-      id: item.id,
-      indice: item.indice,
-      nombre: item.nombre,
-      currentLevel: item.current_level,
-      maxLevel: item.max_level,
-      faltante: item.faltante,
-      completo: item.completo?,
-      fuente: item.fuente,
-      bloqueado: item.bloqueado,
-      niveles: item.niveles
-    }
   end
 end

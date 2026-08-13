@@ -1,0 +1,37 @@
+# Nombres del dominio en español. Los mensajes genericos ("no puede estar en
+# blanco", "ya esta en uso") los trae rails-i18n; lo que esa gema no puede saber
+# es como se llama cada campo de esta app, y el nombre del campo es la mitad del
+# mensaje que ve el usuario: sin esto un 422 responde "Current level debe ser
+# menor o igual que 21".
+es:
+  activerecord:
+    models:
+      account: cuenta
+      account_item: elemento
+      game_item: elemento del catalogo
+      game_item_level: nivel del catalogo
+      user: usuario
+    attributes:
+      account:
+        nombre: nombre
+        town_hall: ayuntamiento
+        builder_hall: taller del constructor
+        tag_coc: tag de Clash
+        orden: orden
+        gid_origen: pestaña de origen
+      account_item:
+        current_level: nivel actual
+        max_level: nivel maximo
+        indice: indice
+        fuente: fuente
+        bloqueado: bloqueado
+      game_item:
+        categoria: categoria
+        nombre: nombre
+        nombre_api: nombre en la API
+        max_level: nivel maximo
+        desbloquea_en_th: ayuntamiento que lo desbloquea
+      user:
+        email: email
+        password: contraseña
+        rol: rol

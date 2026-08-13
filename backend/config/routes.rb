@@ -20,7 +20,11 @@ Rails.application.routes.draw do
       end
 
       # Lectura publica del progreso; escribir exige sesion.
-      resources :accounts, only: %i[index show]
+      resources :accounts, only: %i[index show create update destroy] do
+        # Anidado porque un elemento no significa nada fuera de su cuenta, y asi
+        # el controlador lo busca siempre dentro de ella.
+        resources :items, only: :update, controller: "account_items"
+      end
     end
   end
 end
