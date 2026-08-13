@@ -73,8 +73,11 @@ jobs:
       - name: Lint code for consistent style
         run: bin/rubocop -f github
 
+      # Se invoca la gema directamente y no bin/brakeman: ese binstub agrega
+      # --ensure-latest, que falla cuando existe una version mas nueva de
+      # Brakeman. En CI eso rompe el pipeline sin que el codigo haya cambiado.
       - name: Scan for common Rails security vulnerabilities
-        run: bin/brakeman --no-pager --exit-on-warn --exit-on-error
+        run: bundle exec brakeman --no-pager --exit-on-warn --exit-on-error
 
       - name: Scan for known vulnerabilities in gems
         run: bin/bundler-audit
