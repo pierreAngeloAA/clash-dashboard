@@ -3,7 +3,10 @@ dist
 dist-ssr
 .env
 .env.local
-server/.env
 .vscode
 .DS_Store
 *.log
+
+# Configuración local de asistentes de código
+CLAUDE.md
+.claude/
