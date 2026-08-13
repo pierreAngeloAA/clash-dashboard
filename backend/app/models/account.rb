@@ -4,7 +4,10 @@ class Account < ApplicationRecord
 
   # Un modelo por seccion del Sheet, todos colgando de la cuenta.
   has_many :heroes, class_name: "Heroe", dependent: :destroy
+  # Los poderes de heroe. El Sheet los titula "GUARDIANES" y de ahi el nombre de
+  # la clase; cada uno pertenece ademas a un heroe de esta misma cuenta.
   has_many :guardianes, class_name: "Guardian", dependent: :destroy
+  has_many :poderes, class_name: "Guardian", dependent: :destroy
   has_many :animales, class_name: "Animal", dependent: :destroy
   has_many :defensas, class_name: "Defensa", dependent: :destroy
   has_many :trampas, class_name: "Trampa", dependent: :destroy
@@ -50,6 +53,23 @@ class Account < ApplicationRecord
 
   def sincronizable?
     tag_coc.present?
+  end
+
+  # Cuelga de su heroe cada poder que todavia no lo tenga. Hace falta porque el
+  # catalogo puede declarar de que heroe es un poder despues de haber importado
+  # las cuentas, y los poderes ya creados no se enteran solos.
+  def vincular_poderes!
+    vinculados = 0
+
+    poderes.sin_heroe.includes(:game_item).each do |poder|
+      poder.validate # dispara la asignacion del heroe desde el catalogo
+      next if poder.heroe_id.blank?
+
+      poder.save!
+      vinculados += 1
+    end
+
+    vinculados
   end
 
   # Devuelve el progreso agrupado por seccion, en el mismo orden en que las

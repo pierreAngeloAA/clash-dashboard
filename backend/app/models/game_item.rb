@@ -54,6 +54,10 @@ class GameItem < ApplicationRecord
     uniqueness: { scope: :categoria, case_sensitive: false }
   validates :nombre_api, uniqueness: { case_sensitive: false }, allow_nil: true
   validates :max_level, numericality: { only_integer: true, greater_than: 0 }
+  # De que heroe es este poder. Solo tiene sentido para los poderes, y solo
+  # puede apuntar a un heroe.
+  validates :heroe_categoria, inclusion: { in: HEROES }, allow_nil: true
+  validate :solo_los_poderes_pertenecen_a_un_heroe
 
   scope :de_la_api, -> { where(categoria: CATEGORIAS_DE_LA_API) }
   scope :solo_manuales, -> { where.not(categoria: CATEGORIAS_DE_LA_API) }
@@ -71,5 +75,17 @@ class GameItem < ApplicationRecord
 
   def sincronizable_con_api?
     CATEGORIAS_DE_LA_API.include?(categoria) && nombre_api.present?
+  end
+
+  def poder?
+    categoria == "GUARDIANES"
+  end
+
+  private
+
+  def solo_los_poderes_pertenecen_a_un_heroe
+    return if heroe_categoria.blank? || poder?
+
+    errors.add(:heroe_categoria, "solo se declara en los poderes de heroe")
   end
 end

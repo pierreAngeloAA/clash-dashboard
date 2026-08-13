@@ -43,8 +43,13 @@ class AccountSerializer
   # Account#secciones ya devuelve las categorias en el orden del Sheet y precarga
   # los niveles del catalogo, asi que serializar aca no dispara consultas extra.
   def secciones
-    account.secciones.transform_values do |items|
-      items.map { |item| AccountItemSerializer.new(item).call }
+    agrupadas = account.secciones
+    # Los poderes ya vienen en esta misma consulta, dentro de la seccion
+    # GUARDIANES: agruparlos aca evita ir a buscarlos de nuevo por cada heroe.
+    poderes = agrupadas.values.flatten.grep(Guardian).group_by(&:heroe_id)
+
+    agrupadas.transform_values do |items|
+      items.map { |item| AccountItemSerializer.new(item, poderes: poderes[item.id]).call }
     end
   end
 end

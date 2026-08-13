@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_11_220006) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_13_180001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -21,6 +21,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_220006) do
     t.integer "current_level", default: 0, null: false
     t.string "fuente", default: "manual", null: false
     t.bigint "game_item_id", null: false
+    t.bigint "heroe_id"
     t.integer "indice", default: 1, null: false
     t.integer "max_level", null: false
     t.datetime "sincronizado_en"
@@ -31,6 +32,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_220006) do
     t.index ["account_id"], name: "index_account_items_on_account_id"
     t.index ["fuente"], name: "index_account_items_on_fuente"
     t.index ["game_item_id"], name: "index_account_items_on_game_item_id"
+    t.index ["heroe_id"], name: "index_account_items_on_heroe_id"
     t.check_constraint "current_level >= 0 AND current_level <= max_level", name: "account_items_current_level_dentro_de_rango"
     t.check_constraint "indice > 0", name: "account_items_indice_positivo"
     t.check_constraint "max_level > 0", name: "account_items_max_level_positivo"
@@ -81,6 +83,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_220006) do
     t.string "categoria", null: false
     t.datetime "created_at", null: false
     t.integer "desbloquea_en_th", default: 1, null: false
+    t.string "heroe_categoria"
     t.integer "max_level", null: false
     t.string "nombre", null: false
     t.string "nombre_api"
@@ -88,6 +91,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_220006) do
     t.datetime "updated_at", null: false
     t.index ["categoria", "nombre"], name: "index_game_items_on_categoria_and_nombre", unique: true
     t.index ["categoria"], name: "index_game_items_on_categoria"
+    t.index ["heroe_categoria"], name: "index_game_items_on_heroe_categoria"
     t.index ["nombre_api"], name: "index_game_items_on_nombre_api", unique: true
     t.check_constraint "max_level > 0", name: "game_items_max_level_positivo"
   end
@@ -107,6 +111,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_220006) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  add_foreign_key "account_items", "account_items", column: "heroe_id"
   add_foreign_key "account_items", "accounts"
   add_foreign_key "account_items", "game_items"
   add_foreign_key "game_item_levels", "game_items"

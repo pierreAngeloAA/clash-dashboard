@@ -31,6 +31,16 @@ FactoryBot.define do
       desbloquea_en_th { 8 }
     end
 
+    # Un poder que el catalogo declara como perteneciente a un heroe.
+    trait :poder_del_rey do
+      categoria { "GUARDIANES" }
+      sequence(:nombre) { |n| "Guantelete Gigante #{n}" }
+      sequence(:nombre_api) { |n| "Giant Gauntlet #{n}" }
+      max_level { 27 }
+      desbloquea_en_th { 8 }
+      heroe_categoria { "REY BARBARO" }
+    end
+
     trait :tropa_clara do
       categoria { "TROPAS CLARAS" }
       sequence(:nombre) { |n| "Barbaro #{n}" }

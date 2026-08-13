@@ -138,6 +138,41 @@ RSpec.describe "Api::V1::Accounts" do
       expect(estados).to eq(%w[hecho en_curso pendiente])
     end
 
+    # Los poderes son de los heroes: el detalle los devuelve colgando del heroe,
+    # no sueltos en la cuenta.
+    it "devuelve los poderes dentro de su heroe" do
+      catalogo_heroe = create(:game_item, :heroe, categoria: "REY BARBARO")
+      rey = create(:heroe, account: cuenta, game_item: catalogo_heroe)
+      create(:guardian,
+        account: cuenta,
+        game_item: create(:game_item, :poder_del_rey, nombre: "Guantelete Gigante"),
+        current_level: 3,
+        max_level: 27)
+
+      get "/api/v1/accounts/#{cuenta.id}"
+
+      heroe = response.parsed_body.dig("secciones", "REY BARBARO", 0)
+      expect(heroe["id"]).to eq(rey.id)
+      expect(heroe["poderes"].map { |p| p["nombre"] }).to eq([ "Guantelete Gigante" ])
+      expect(heroe["poderes"].first).to include("currentLevel" => 3, "maxLevel" => 27)
+    end
+
+    it "devuelve el heroe sin poderes como una lista vacia" do
+      create(:heroe, account: cuenta, game_item: create(:game_item, :heroe))
+
+      get "/api/v1/accounts/#{cuenta.id}"
+
+      expect(response.parsed_body.dig("secciones", "REY BARBARO", 0, "poderes")).to eq([])
+    end
+
+    it "no le pone poderes a lo que no es un heroe" do
+      agregar("NIVELES DEFENSAS", 21, 10, nombre: "Canon")
+
+      get "/api/v1/accounts/#{cuenta.id}"
+
+      expect(response.parsed_body.dig("secciones", "NIVELES DEFENSAS", 0)).not_to have_key("poderes")
+    end
+
     it "incluye el report calculado" do
       agregar("NIVELES DEFENSAS", 10, 4)
       agregar("NIVELES DEFENSAS", 10, 6)
