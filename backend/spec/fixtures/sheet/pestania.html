@@ -1,0 +1,45 @@
+<html>
+<head>
+<style>
+.s0 {background-color:#ffffff;}
+.s1 {background-color:#34a853;}
+.s2 {background-color:#ffff00;}
+.s3 {background-color:#ffffff;}
+</style>
+</head>
+<body>
+<table>
+  <!-- Layout 1: una fila por elemento. El encabezado lleva los niveles a la
+       derecha y debajo va una fila por copia. -->
+  <tr><th>1</th><td class="s0"></td><td class="s0">8</td><td class="s0">NIVELES DEFENSAS</td><td class="s0">1</td><td class="s0">2</td><td class="s0">3</td></tr>
+  <tr><th>2</th><td class="s0"></td><td class="s0">1</td><td class="s0">Cañón</td><td class="s1">TH1</td><td class="s1">TH3</td><td class="s2">TH5</td></tr>
+  <tr><th>3</th><td class="s0"></td><td class="s0">2</td><td class="s0">Cañón</td><td class="s1">TH1</td><td class="s0">TH3</td><td class="s0">TH5</td></tr>
+  <tr><th>4</th><td class="s0"></td><td class="s0">1</td><td class="s0">Mortero</td><td class="s1">TH3</td><td class="s1">TH6</td><td class="s1">TH8</td></tr>
+
+  <!-- El elemento con menos niveles que la seccion: su maximo es hasta donde
+       llega su fila, no hasta donde llega el encabezado. -->
+  <tr><th>5</th><td class="s0"></td><td class="s0">1</td><td class="s0">Tesla</td><td class="s1">TH7</td><td class="s0">TH9</td><td class="s0"></td></tr>
+
+  <!-- En esta seccion el numero de la izquierda numera la lista, no copias: hay
+       una sola arquera aunque figure como la fila 2. -->
+  <tr><th>6</th><td class="s0"></td><td class="s0">3</td><td class="s0">TROPAS CLARAS</td><td class="s0">1</td><td class="s0">2</td><td class="s0">3</td></tr>
+  <tr><th>7</th><td class="s0"></td><td class="s0">1</td><td class="s0">Barbaro</td><td class="s1">TH1</td><td class="s1">TH3</td><td class="s0">TH5</td></tr>
+  <tr><th>8</th><td class="s0"></td><td class="s0">2</td><td class="s0">Arquera</td><td class="s1">TH1</td><td class="s0">TH3</td><td class="s0">TH5</td></tr>
+
+  <!-- Layout 2: heroes. El ancla y debajo los niveles sueltos, agrupados por el
+       ayuntamiento que los habilita. -->
+  <tr><th>6</th><td class="s0"></td><td class="s0">0</td><td class="s0">REY BARBARO</td><td class="s0"></td><td class="s0"></td><td class="s0"></td></tr>
+  <tr><th>7</th><td class="s0"></td><td class="s0">1</td><td class="s0">TH7:</td><td class="s1">1</td><td class="s1">2</td><td class="s1">3</td></tr>
+  <tr><th>8</th><td class="s0"></td><td class="s0">2</td><td class="s0">TH8:</td><td class="s1">4</td><td class="s2">5</td><td class="s0">6</td></tr>
+
+  <!-- El bloque REPORT repite las mismas etiquetas con numeros pegados a la
+       derecha: no es catalogo y tiene que descartarse. -->
+  <tr><th>9</th><td class="s0"></td><td class="s0"></td><td class="s0">REY BARBARO</td><td class="s0">110</td><td class="s0">1</td><td class="s0">99.1%</td></tr>
+  <tr><th>10</th><td class="s0"></td><td class="s0"></td><td class="s0">PROGRESO</td><td class="s0">80%</td><td class="s0"></td><td class="s0"></td></tr>
+
+  <!-- Layout 3: guardianes. El nombre del equipo y debajo su tira de niveles. -->
+  <tr><th>11</th><td class="s0"></td><td class="s0">0</td><td class="s0">TIRADORA</td><td class="s0"></td><td class="s0"></td><td class="s0"></td></tr>
+  <tr><th>12</th><td class="s0"></td><td class="s0">TH18:</td><td class="s0">TH18:</td><td class="s1">1</td><td class="s1">2</td><td class="s2">3</td></tr>
+</table>
+</body>
+</html>

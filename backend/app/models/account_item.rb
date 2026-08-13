@@ -65,6 +65,13 @@ class AccountItem < ApplicationRecord
     !bloqueado? && game_item.sincronizable_con_api?
   end
 
+  # El Google Sheet solo siembra la base la primera vez. Si el elemento ya se
+  # sincronizo con la API o alguien lo corrigio a mano, esos datos ganan: la
+  # planilla es justamente lo que se dejo de actualizar.
+  def pisable_por_el_sheet?
+    !bloqueado? && fuente != "api"
+  end
+
   def aplicar_desde_api!(nivel, max_del_api: nil)
     return false unless sincronizable_desde_api?
 
