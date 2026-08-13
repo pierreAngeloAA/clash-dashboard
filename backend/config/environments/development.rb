@@ -35,6 +35,11 @@ Rails.application.configure do
   # Set localhost to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
 
+  # Dentro de compose el frontend reenvia /api a http://backend:3000, asi que el
+  # Host de esas peticiones es el nombre del servicio y no localhost. Sin esto
+  # Rails las rechaza con un 403 de host bloqueado.
+  config.hosts << "backend"
+
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
 

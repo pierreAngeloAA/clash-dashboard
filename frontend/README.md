@@ -158,41 +158,39 @@ vercel --prod     # deploy a producción
 
 ## 9. Integración con la API oficial de Clash of Clans
 
-Además del Sheet, el proyecto incluye un **proxy mínimo en `coc-proxy/`** que
-consume la API oficial (`https://api.clashofclans.com/v1`) y la expone al
-frontend bajo `/api/*`. Vite redirige `/api` al proxy en `:3001` durante el
-desarrollo.
+Además del Sheet, el backend consume la API oficial
+(`https://api.clashofclans.com/v1`) y la expone bajo `/api/v1/*`. Vite redirige
+todo `/api` al backend en `:3000` durante el desarrollo.
 
-**¿Por qué un proxy?** Los tokens de la API están **ligados a IPs concretas**,
-así que no se pueden poner en el navegador. El proxy mantiene el token en
-`coc-proxy/.env` y solo expone JSON al frontend.
+**¿Por qué pasa por el backend?** Los tokens de la API están **ligados a IPs
+concretas**, así que no se pueden poner en el navegador. El backend guarda el
+token y solo expone JSON al frontend.
 
-### Setup del proxy (una vez)
+### Setup del token (una vez)
 
 1. Registrate en https://developer.clashofclans.com/.
-2. Averiguá la IP pública desde donde vas a correr el proxy:
+2. Averiguá la IP pública desde donde vas a correr el backend:
    ```bash
    curl -s https://api.ipify.org
    ```
 3. En el portal: **My Account → Create New Key**. Pegá esa IP en *Allowed IP Addresses*.
 4. Copiá el token JWT generado.
-5. Creá `coc-proxy/.env` a partir del ejemplo y pegá el token:
+5. Creá `.env` en la raíz del repo a partir del ejemplo y pegá el token:
    ```bash
-   cp coc-proxy/.env.example coc-proxy/.env
+   cp .env.example .env
    # y editá COC_TOKEN=...
    ```
 
 ### Correr en desarrollo
 
-En dos terminales distintas:
+Con Docker levanta todo junto:
 
 ```bash
-# terminal 1 — proxy
-npm run dev:server
-
-# terminal 2 — frontend
-npm run dev
+docker compose up
 ```
+
+Sin Docker, en dos terminales: `bin/rails server` en `backend/` y `npm run dev`
+acá.
 
 Abrí http://localhost:5173/clan e ingresá tu tag de clan (ej. `#2PP`).
 
@@ -202,17 +200,18 @@ Tip: si querés que cargue uno por defecto, definilo en `.env.local` del root:
 VITE_DEFAULT_CLAN_TAG=#2PP
 ```
 
-### Endpoints del proxy
+### Endpoints de Clash en el backend
 
-| Método | Path                            | Devuelve                                         |
-|--------|---------------------------------|--------------------------------------------------|
-| GET    | `/api/clan/:tag`                | Clan + detalle de cada miembro (fan-out + caché) |
-| GET    | `/api/player/:tag`              | Detalle de un jugador                             |
-| GET    | `/api/clan/:tag/currentwar`     | Guerra actual                                     |
-| DELETE | `/api/cache`                    | Limpia la caché en memoria                        |
+| Método | Path                              | Devuelve                                         |
+|--------|-----------------------------------|--------------------------------------------------|
+| GET    | `/api/v1/clan/:tag`               | Clan + detalle de cada miembro (fan-out + caché) |
+| GET    | `/api/v1/player/:tag`             | Detalle de un jugador                             |
+| GET    | `/api/v1/clan/:tag/currentwar`    | Guerra actual                                     |
+| GET    | `/api/v1/coc/health`              | Si hay token configurado                          |
 
-El proxy cachea cada path 10 minutos en memoria y deduplica llamadas
-simultáneas (in-flight). Cambialo con `CACHE_TTL_MS` en `coc-proxy/.env`.
+El backend cachea cada consulta 10 minutos y pide los miembros del clan en
+paralelo. Sin `COC_TOKEN` estos endpoints responden 503 explicando que falta;
+el resto de la app no depende de ellos.
 
 ### Qué expone la API y qué no
 

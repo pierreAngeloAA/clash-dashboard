@@ -1,6 +1,6 @@
 /**
- * Cliente del proxy local que consume la API de Clash of Clans.
- * El token vive solo en el servidor (coc-proxy/.env).
+ * Cliente de la API de Clash of Clans, que se consume a traves del backend.
+ * El token vive solo ahi: esta atado a una IP y no puede viajar al navegador.
  */
 
 const normalizeTag = (tag) => {
@@ -13,22 +13,22 @@ async function getJson(url) {
   const res = await fetch(url);
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(body?.error || `Error ${res.status} desde el proxy.`);
+    throw new Error(body?.error || `Error ${res.status} desde el backend.`);
   }
   return body;
 }
 
 export function fetchClan(tag) {
   const t = encodeURIComponent(normalizeTag(tag));
-  return getJson(`/api/clan/${t}`);
+  return getJson(`/api/v1/clan/${t}`);
 }
 
 export function fetchPlayer(tag) {
   const t = encodeURIComponent(normalizeTag(tag));
-  return getJson(`/api/player/${t}`);
+  return getJson(`/api/v1/player/${t}`);
 }
 
 export function fetchCurrentWar(clanTag) {
   const t = encodeURIComponent(normalizeTag(clanTag));
-  return getJson(`/api/clan/${t}/currentwar`);
+  return getJson(`/api/v1/clan/${t}/currentwar`);
 }

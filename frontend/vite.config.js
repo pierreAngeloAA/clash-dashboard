@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Fuera de Docker el proxy de CoC corre en la misma maquina; dentro de compose
-// hay que apuntar al nombre del servicio, de ahi que el destino sea una variable.
-const PROXY_TARGET = process.env.VITE_PROXY_TARGET || 'http://localhost:3001';
+// Todo /api va al backend de Rails: las cuentas y tambien la API de Clash, que
+// antes atendia un proxy Express aparte. Fuera de Docker corre en la misma
+// maquina; dentro de compose hay que apuntar al nombre del servicio.
+const PROXY_TARGET = process.env.VITE_PROXY_TARGET || 'http://localhost:3000';
 
 export default defineConfig({
   plugins: [react()],

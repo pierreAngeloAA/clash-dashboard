@@ -19,6 +19,16 @@ Rails.application.routes.draw do
         get "me", to: "sessions#show"
       end
 
+      # API oficial de Clash of Clans. El tag lleva un "#" que viaja escapado
+      # como %23, asi que la restriccion acepta cualquier cosa menos la barra, y
+      # se desactiva el formato para que un tag no se confunda con una extension.
+      scope constraints: { tag: %r{[^/]+} }, format: false do
+        get "clan/:tag", to: "clash#clan"
+        get "clan/:tag/currentwar", to: "clash#guerra"
+        get "player/:tag", to: "clash#jugador"
+      end
+      get "coc/health", to: "clash#health"
+
       # Lectura publica del progreso; escribir exige sesion.
       resources :accounts, only: %i[index show create update destroy] do
         # Anidado porque un elemento no significa nada fuera de su cuenta, y asi

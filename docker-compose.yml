@@ -1,4 +1,4 @@
-# Stack de desarrollo completo. Los cuatro servicios levantan con:
+# Stack de desarrollo completo. Los tres servicios levantan con:
 #
 #   docker compose up
 #
@@ -36,6 +36,9 @@ services:
       JWT_SECRET: clash_dev_secret_change_in_production
       # Origen que rack-cors deja pasar (config/initializers/cors.rb).
       FRONTEND_URL: http://localhost:5173
+      # Token de la API oficial de Clash of Clans. Va atado a una IP y no se
+      # versiona: se define en un .env propio o en el entorno de la maquina.
+      COC_TOKEN: ${COC_TOKEN:-}
     ports:
       # Configurable porque el 3000 es un puerto disputado: si tenes otro Rails
       # local escuchando ahi, levanta con BACKEND_PORT=3002 docker compose up
@@ -48,29 +51,12 @@ services:
       db:
         condition: service_healthy
 
-  coc-proxy:
-    build: ./coc-proxy
-    # El COC_TOKEN va aparte porque esta atado a una IP y no se versiona.
-    # Crealo con: cp coc-proxy/.env.example coc-proxy/.env
-    env_file:
-      - path: ./coc-proxy/.env
-        required: false
-    environment:
-      PORT: 3001
-    ports:
-      - "3001:3001"
-    volumes:
-      - ./coc-proxy:/app
-      - /app/node_modules
-
   frontend:
     build: ./frontend
     environment:
       # Destino del proxy /api de Vite: dentro de la red de compose el host es
       # el nombre del servicio, no localhost.
-      VITE_PROXY_TARGET: http://coc-proxy:3001
-      # Rails todavia no se consume desde el frontend; queda listo para cuando
-      # se conecte el login.
+      VITE_PROXY_TARGET: http://backend:3000
       VITE_API_URL: http://localhost:3000/api/v1
       VITE_OPEN: "false"
     ports:
@@ -80,7 +66,6 @@ services:
       - /app/node_modules
     depends_on:
       - backend
-      - coc-proxy
 
 volumes:
   db_data:
