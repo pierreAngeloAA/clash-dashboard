@@ -6,6 +6,79 @@ on:
     branches: [ main, staging ]
 
 jobs:
+  backend:
+    name: Backend — tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      # La suite usa PostgreSQL de verdad, no sqlite: hay restricciones de
+      # unicidad y check constraints que solo se comportan igual en el motor real.
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      RAILS_ENV: test
+      DATABASE_HOST: localhost
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          working-directory: backend
+          bundler-cache: true
+
+      - name: Prepare database
+        run: bin/rails db:prepare
+
+      - name: Run tests
+        run: bundle exec rspec
+
+  backend_calidad:
+    name: Backend — estilo y seguridad
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          working-directory: backend
+          bundler-cache: true
+
+      - name: Lint code for consistent style
+        run: bin/rubocop -f github
+
+      - name: Scan for common Rails security vulnerabilities
+        run: bin/brakeman --no-pager --exit-on-warn --exit-on-error
+
+      - name: Scan for known vulnerabilities in gems
+        run: bin/bundler-audit
+
   frontend:
     name: Tests y build
     runs-on: ubuntu-latest

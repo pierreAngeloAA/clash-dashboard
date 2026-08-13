@@ -1,5 +1,24 @@
-# Audit all gems listed in the Gemfile for known security problems by running bin/bundler-audit.
-# CVEs that are not relevant to the application can be enumerated on the ignore list below.
-
+# Vulnerabilidades conocidas de las gemas. Se revisan con bin/bundler-audit y en
+# cada corrida de CI.
+#
+# Solo se ignora lo que esta verificado que no afecta a esta app, y con el
+# motivo escrito: una lista sin justificacion se convierte en un lugar donde
+# esconder avisos.
 ignore:
-  - CVE-THAT-DOES-NOT-APPLY
+  # Devise 4.9.4 arrastra dos avisos que dependen de modulos que esta app no
+  # usa. `app/models/user.rb` habilita unicamente database_authenticatable,
+  # validatable y jwt_authenticatable.
+  #
+  # Ninguno se puede resolver actualizando: la solucion es Devise >= 5.0, y
+  # devise-jwt 0.12.1 declara `devise (~> 4.0)`. Salir de Devise 4 obliga a
+  # cambiar de gema de JWT, que es un trabajo aparte y no una actualizacion.
+
+  # Confirmable: condicion de carrera al cambiar de email. La app no usa
+  # confirmable, no manda mails y no tiene registro publico.
+  - CVE-2026-32700
+  - GHSA-57hq-95w6-v4fc
+
+  # Timeoutable: open redirect via request.referrer. La app no usa timeoutable
+  # y, siendo API-only con JWT, no hace redirecciones.
+  - CVE-2026-40295
+  - GHSA-jp94-3292-c3xv
