@@ -1,9 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 export default function CategoryDetailModal({
   category,
   items,
   summary,
+  onEditar,
   onClose,
 }) {
   useEffect(() => {
@@ -60,7 +62,7 @@ export default function CategoryDetailModal({
           ) : (
             <ul className="divide-y divide-slate-100">
               {items.map((item) => (
-                <ItemRow key={item.id} item={item} />
+                <ItemRow key={item.id} item={item} onEditar={onEditar} />
               ))}
             </ul>
           )}
@@ -70,9 +72,48 @@ export default function CategoryDetailModal({
   );
 }
 
-function ItemRow({ item }) {
+function ItemRow({ item, onEditar }) {
+  const { autenticado } = useAuth();
+  const [nivel, setNivel] = useState(String(item.currentLevel));
+  const [error, setError] = useState(null);
+  const [guardando, setGuardando] = useState(false);
+
+  // El nivel puede cambiar desde afuera: el hook recarga la cuenta despues de
+  // cada edicion, y el backend pudo haberlo ajustado.
+  useEffect(() => {
+    setNivel(String(item.currentLevel));
+  }, [item.currentLevel]);
+
   const pct = item.maxLevel > 0 ? (item.currentLevel / item.maxLevel) * 100 : 0;
   const isMaxed = item.currentLevel === item.maxLevel && item.maxLevel > 0;
+
+  const guardar = async (cambios) => {
+    setError(null);
+    setGuardando(true);
+    try {
+      await onEditar(item.id, cambios);
+    } catch (err) {
+      setError(err.message || 'No se pudo guardar.');
+      // El backend rechazo el cambio, asi que lo que hay en pantalla no es lo
+      // que hay en la base: se vuelve al valor real para no mentir.
+      setNivel(String(item.currentLevel));
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  // Guarda al salir del campo o con Enter, no en cada tecla: escribir "12"
+  // pasa por "1", y guardar eso mandaria un nivel que el usuario nunca quiso.
+  const alConfirmar = () => {
+    const valor = Number(nivel);
+    if (nivel === '' || !Number.isFinite(valor) || valor === item.currentLevel) {
+      setNivel(String(item.currentLevel));
+      return;
+    }
+
+    guardar({ current_level: valor });
+  };
+
   return (
     <li className="px-5 py-3.5">
       <div className="flex items-center justify-between gap-3">
@@ -83,15 +124,57 @@ function ItemRow({ item }) {
             </span>
           )}
           <p className="font-medium text-slate-900 truncate">{item.nombre}</p>
+          {item.bloqueado && (
+            <span title="Protegido de la sincronizacion" aria-label="Bloqueado">
+              🔒
+            </span>
+          )}
         </div>
-        <p
-          className={`text-sm font-semibold tabular-nums whitespace-nowrap ${
-            isMaxed ? 'text-emerald-600' : 'text-slate-700'
-          }`}
-        >
-          {item.currentLevel}/{item.maxLevel}
-        </p>
+
+        {autenticado ? (
+          <div className="flex items-center gap-2 shrink-0">
+            <input
+              type="number"
+              min="0"
+              max={item.maxLevel}
+              value={nivel}
+              onChange={(e) => setNivel(e.target.value)}
+              disabled={guardando}
+              aria-label={`Nivel de ${item.nombre}`}
+              onBlur={alConfirmar}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') e.target.blur();
+              }}
+              className="w-16 rounded-lg border border-slate-300 px-2 py-1 text-sm text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
+            />
+            <span className="text-sm text-slate-500 tabular-nums">
+              / {item.maxLevel}
+            </span>
+            <button
+              type="button"
+              disabled={guardando}
+              onClick={() => guardar({ bloqueado: !item.bloqueado })}
+              title={
+                item.bloqueado
+                  ? 'Desbloquear: la sincronizacion vuelve a poder pisarlo'
+                  : 'Bloquear: la sincronizacion no lo va a pisar'
+              }
+              className="rounded-lg px-2 py-1 text-sm hover:bg-slate-100 disabled:opacity-50"
+            >
+              {item.bloqueado ? '🔒' : '🔓'}
+            </button>
+          </div>
+        ) : (
+          <p
+            className={`text-sm font-semibold tabular-nums whitespace-nowrap ${
+              isMaxed ? 'text-emerald-600' : 'text-slate-700'
+            }`}
+          >
+            {item.currentLevel}/{item.maxLevel}
+          </p>
+        )}
       </div>
+
       <div className="mt-2 h-1.5 rounded-full bg-slate-100 overflow-hidden">
         <div
           className={`h-full transition-all ${
@@ -100,6 +183,12 @@ function ItemRow({ item }) {
           style={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
         />
       </div>
+
+      {error && (
+        <p role="alert" className="mt-2 text-xs text-red-700">
+          {error}
+        </p>
+      )}
     </li>
   );
 }

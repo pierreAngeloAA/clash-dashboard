@@ -20,7 +20,8 @@ const TOTALS_ORDER = [
 
 export default function UserDetail() {
   const { id } = useParams();
-  const { account, secciones, report, loading, error, refetch } = useAccount(id);
+  const { account, secciones, report, loading, error, refetch, editarItem } =
+    useAccount(id);
   const [openCategory, setOpenCategory] = useState(null);
 
   if (loading && !account) return <Loader />;
@@ -75,6 +76,7 @@ export default function UserDetail() {
           // Una fila puede agregar varias secciones: HEROES son seis.
           items={openCategory.secciones.flatMap((s) => secciones?.[s] ?? [])}
           summary={openCategory}
+          onEditar={editarItem}
           onClose={() => setOpenCategory(null)}
         />
       )}
