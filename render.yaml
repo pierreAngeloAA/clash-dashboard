@@ -6,9 +6,14 @@
 # Verificado antes de escribirlo, levantando la imagen de produccion contra una
 # base real: la imagen construye, `db:prepare` corre solo al arrancar, Thruster
 # respeta HTTP_PORT y la API responde con force_ssl activo.
+#
+# Los nombres llevan el prefijo `clash-progreso` porque los obvios estaban
+# tomados: `clash-front.onrender.com` es la app de otra persona. En Render el
+# espacio de nombres es global, asi que un nombre generico casi seguro ya existe
+# y el servicio termina con un sufijo que no se puede predecir.
 
 databases:
-  - name: clash-db
+  - name: clash-progreso-db
     databaseName: clash_dashboard_production
     user: clash
     plan: free
@@ -16,7 +21,7 @@ databases:
 services:
   # ---------------------------------------------------------------- API Rails
   - type: web
-    name: clash-api
+    name: clash-progreso-api
     runtime: docker
     plan: free
     region: oregon
@@ -35,7 +40,7 @@ services:
         value: 10000
       - key: DATABASE_URL
         fromDatabase:
-          name: clash-db
+          name: clash-progreso-db
           property: connectionString
       # No hay master.key en el repo: se saco y se roto. Sin secret_key_base
       # Rails no arranca en produccion, asi que va por variable de entorno.
@@ -46,7 +51,8 @@ services:
       - key: JWT_SECRET
         generateValue: true
       # El origen que rack-cors deja pasar. Se completa a mano despues del
-      # primer deploy, cuando se sabe la URL definitiva del frontend.
+      # primer deploy con la URL que Render le haya dado al frontend. Si queda
+      # mal, el navegador bloquea las peticiones: molesto, pero no peligroso.
       - key: FRONTEND_URL
         sync: false
       # Atado a una IP: hay que declarar la de salida de Render en
@@ -57,23 +63,30 @@ services:
 
   # ----------------------------------------------------------- Frontend build
   - type: web
-    name: clash-front
+    name: clash-progreso-web
     runtime: static
+    plan: free
     rootDir: frontend
-    buildCommand: npm ci && npm run build
+    # VITE_API_URL entra al build desde la variable de abajo, que Render
+    # completa con la URL real de la API.
+    buildCommand: npm ci && VITE_API_URL="https://$API_HOST/api/v1" npm run build
     staticPublishPath: ./dist
-    routes:
-      # El frontend pide /api/v1/... con rutas relativas, asi que el navegador ve
-      # todo del mismo origen y CORS no entra en juego. Es el mismo esquema que
-      # el proxy de Vite en desarrollo.
+    envVars:
+      # La clave de todo esto: la URL de la API la resuelve Render mirando el
+      # servicio, no se escribe a mano.
       #
-      # OJO: si Render le asigna a la API un nombre distinto de `clash-api`
-      # (pasa cuando el nombre ya esta tomado y le agrega un sufijo), hay que
-      # corregir este destino con la URL real y volver a aplicar el blueprint.
-      - type: rewrite
-        source: /api/*
-        destination: https://clash-api.onrender.com/api/*
-      # El router del cliente maneja el resto de las rutas.
+      # Antes habia un rewrite de /api hacia una URL fija. El problema no era
+      # que fuera fea: si ese nombre lo registra un tercero, el frontend le
+      # manda las peticiones —con el header Authorization incluido— a un
+      # servicio ajeno, y desde afuera todo parece funcionar.
+      - key: API_HOST
+        fromService:
+          type: web
+          name: clash-progreso-api
+          property: host
+    routes:
+      # El router del cliente maneja las rutas: cualquier ruta que no sea un
+      # archivo del build cae en index.html.
       - type: rewrite
         source: /*
         destination: /index.html

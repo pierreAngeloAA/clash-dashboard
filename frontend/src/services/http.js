@@ -8,7 +8,12 @@
  * cae al status.
  */
 
-const BASE = '/api/v1';
+// En desarrollo el proxy de Vite manda /api al backend, asi que alcanza con una
+// ruta relativa. En produccion el frontend es un sitio estatico y la API es otro
+// servicio: la URL la inyecta Render al construir, tomandola del servicio real
+// en vez de escribirla a mano. Escribirla a mano fue un problema concreto: el
+// nombre que parecia libre resulto estar tomado por la app de otra persona.
+const BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
 // El token se guarda en localStorage para que la sesion sobreviva a recargar la
 // pagina. Queda al alcance del JavaScript de la pagina, que es el costo de esta
