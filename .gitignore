@@ -7,6 +7,7 @@ dist-ssr
 .DS_Store
 *.log
 
-# Configuración local de asistentes de código
-CLAUDE.md
+# Configuración local de asistentes de código. CLAUDE.md si se versiona: es
+# documentación del proyecto y sirve a cualquiera que lo lea, no solo a la
+# herramienta. Lo que queda afuera es la configuración de la maquina.
 .claude/
