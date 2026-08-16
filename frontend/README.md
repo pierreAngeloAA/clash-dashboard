@@ -1,234 +1,140 @@
-# Clash Dashboard
+# Frontend
 
-Aplicación web moderna construida con **React + Vite + TailwindCSS** que consume datos
-desde un Google Sheets público y los muestra como un dashboard de jugadores.
+React + Vite + TailwindCSS. Es la interfaz del panel; los datos salen todos de la
+API en `backend/`. Para levantar el proyecto entero, ver el
+[README de la raíz](../README.md).
 
-- Sin backend. Todo corre en el navegador.
-- Búsqueda, filtro por rango numérico, ordenamiento y paginación.
-- Vista de detalle por usuario con todas sus columnas.
-- Cache en `localStorage` (5 minutos) para evitar re-fetch innecesarios.
+> Este README describía una app **sin backend**, que leía un Google Sheet público
+> desde el navegador. Eso dejó de ser cierto: el Sheet se importó a PostgreSQL y
+> el navegador ya no le habla a Google.
 
-## 1. Cómo se consume el Google Sheet
+## Levantar
 
-El proyecto usa el endpoint público `gviz` de Google Sheets, que no requiere
-autenticación ni API key.
-
-### Pasos para publicarlo
-
-1. Abrí el Sheet → **Archivo → Compartir → Compartir con otras personas**.
-2. En **Acceso general** elegí **"Cualquiera con el enlace" (Lector)**.
-3. Tomá de la URL del navegador estos dos valores:
-   - `SHEET_ID` → el bloque entre `/d/` y `/edit`.
-   - `GID` → el número que aparece después de `#gid=`.
-
-### Transformación del link
-
-Pasás de la URL del navegador:
-
-```
-https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit?gid={GID}#gid={GID}
-```
-
-A la URL del endpoint JSON `gviz`:
-
-```
-https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:json&gid={GID}
-```
-
-La respuesta llega envuelta en un wrapper:
-
-```
-/*O_o*/
-google.visualization.Query.setResponse({ ...JSON... });
-```
-
-`src/services/sheetsService.js` recorta el wrapper y parsea el JSON con
-`JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1))`.
-
-### Cambiar el sheet usado
-
-Editá las constantes `SHEET_ID` y `SHEET_GID` en `src/services/sheetsService.js`.
-
-```js
-export const SHEET_ID = '1gosF9F2mdWuQRH2ubcsc39WRy66x81K9UjRlFdwNbpo';
-export const SHEET_GID = '840746911';
-```
-
-## 2. Cómo se actualizan los datos
-
-- **Automático:** los datos se cachean en `localStorage` durante 5 minutos. Pasado
-  ese tiempo, la siguiente carga vuelve a leer el Sheet.
-- **Manual:** botón **"Refrescar"** en la barra superior. Limpia la caché y
-  vuelve a leer el Sheet inmediatamente.
-- **Cambios de columnas:** la app detecta dinámicamente los encabezados, así
-  que si agregás o renombrás columnas en el Sheet, aparecen automáticamente
-  como filtros y como campos en la vista de detalle. La detección de "Nombre",
-  "Clan" y "Nivel/Puntos" se hace por nombre de columna (case-insensitive),
-  ver `src/hooks/useFilteredUsers.js → detectColumns`.
-
-## 3. Estructura del proyecto
-
-```
-src/
-├── components/         # UI reutilizable
-│   ├── ErrorMessage.jsx
-│   ├── Filters.jsx
-│   ├── Loader.jsx
-│   ├── Navbar.jsx
-│   ├── Pagination.jsx
-│   ├── SearchBar.jsx
-│   └── UserCard.jsx
-├── hooks/
-│   ├── useFilteredUsers.js   # search + sort + filter
-│   └── useSheetData.js       # fetch + cache + loading/error
-├── pages/
-│   ├── Dashboard.jsx         # lista + controles
-│   └── UserDetail.jsx        # ficha completa
-├── services/
-│   └── sheetsService.js      # fetch + parser gviz + cache
-├── App.jsx                   # router + layout
-├── main.jsx                  # entry point
-└── index.css                 # tailwind base
-```
-
-## 4. Instalación
-
-Requisitos: Node.js 18+ y npm.
+Con Docker, desde la raíz, `docker compose up` levanta todo. Suelto:
 
 ```bash
 npm install
+npm run dev      # http://localhost:5173
 ```
 
-## 5. Desarrollo
+Necesita **Node 22 o superior**: lo exige Vite 8.
 
 ```bash
-npm run dev
+npm run build    # bundle a dist/
+npm run preview  # sirve el build
+npm test         # Vitest
 ```
 
-Abre http://localhost:5173 (Vite lo abre automáticamente).
+Los tests conviene correrlos dentro del contenedor (`docker compose exec frontend
+npm test`): con Node 20 fallan con `webidl.util.markAsUncloneable is not a
+function`, porque jsdom pide 22.
 
-## 6. Build de producción
+## Cómo se habla con el backend
 
-```bash
-npm run build
-npm run preview   # sirve el build localmente
-```
+`src/services/http.js` es **el único lugar donde se arma un `fetch`**. Ahí se
+decide de dónde cuelga la API, cómo viaja el token y cómo un error del backend se
+convierte en el mensaje que se muestra en pantalla.
 
-El bundle se genera en `dist/`.
+En desarrollo, Vite redirige `/api` al backend en `:3000`
+(`vite.config.js`), así que el navegador ve todo del mismo origen y CORS no entra
+en juego. En producción lo resuelve un rewrite equivalente.
 
-## 7. Deploy en Vercel
+Rails contesta de dos formas según el fallo: un `error` suelto cuando la petición
+no procede (401, 404) y un `errors` con la lista de mensajes cuando el dato no
+sirve (422). Los dos vienen en español y con los nombres de los campos
+traducidos, así que se muestran tal cual.
 
-### Opción A — Desde la web (más simple)
+## Sesión
 
-1. Subí el repo a GitHub/GitLab/Bitbucket.
-2. Entrá a [vercel.com/new](https://vercel.com/new) y conectá el repo.
-3. Vercel autodetecta Vite. Si no:
-   - **Build command:** `npm run build`
-   - **Output directory:** `dist`
-   - **Install command:** `npm install`
-4. Click en **Deploy**. Listo.
+- El token llega en el header `Authorization` de la respuesta al login, ya con el
+  prefijo `Bearer`. Se guarda tal cual y se reenvía igual.
+- Vive en `localStorage`, bajo `clash-dashboard:token`.
+- Dura 12 horas. **Cualquier 401 borra el token y cierra la sesión**, salvo en el
+  propio login, donde un 401 significa "credenciales inválidas" y no "se te
+  venció la sesión".
+- **Tener token guardado no es estar logueado**: el token dice que *hubo* una
+  sesión, no que siga viva. Al arrancar, `AuthContext` le pregunta a
+  `/api/v1/me`. De ahí el estado `cargando`, sin el cual el navbar parpadearía
+  mostrando "Login" en cada recarga.
 
-### Opción B — Desde la CLI
+No hay registro público: los usuarios los crea un superadmin con `db:seed`.
 
-```bash
-npm install -g vercel
-vercel            # primer deploy (preview)
-vercel --prod     # deploy a producción
-```
-
-### Notas
-
-- No hace falta configurar variables de entorno: el Sheet es público.
-- Como usamos `react-router-dom`, todas las rutas deben caer en `index.html`.
-  Vercel ya hace eso por defecto en proyectos Vite, pero si lo movés a otro
-  hosting (Netlify, S3, etc.) configurá un rewrite `/*  →  /index.html`.
-
-## 8. Funcionalidad incluida
-
-- [x] Fetch desde Google Sheets (gviz JSON, sin auth).
-- [x] Listado tipo grilla de tarjetas con hover suave.
-- [x] Vista de detalle (`/user/:id`) con todos los campos.
-- [x] Buscador por nombre.
-- [x] Filtro por rango (min / max) sobre cualquier columna numérica.
-- [x] Ordenamiento ascendente / descendente por cualquier columna.
-- [x] Paginación (12 por página).
-- [x] Cache en `localStorage` con TTL de 5 min + botón de refresco manual.
-- [x] Manejo de loading y errores.
-- [x] Responsive (mobile + desktop).
-
-## 9. Integración con la API oficial de Clash of Clans
-
-Además del Sheet, el backend consume la API oficial
-(`https://api.clashofclans.com/v1`) y la expone bajo `/api/v1/*`. Vite redirige
-todo `/api` al backend en `:3000` durante el desarrollo.
-
-**¿Por qué pasa por el backend?** Los tokens de la API están **ligados a IPs
-concretas**, así que no se pueden poner en el navegador. El backend guarda el
-token y solo expone JSON al frontend.
-
-### Setup del token (una vez)
-
-1. Registrate en https://developer.clashofclans.com/.
-2. Averiguá la IP pública desde donde vas a correr el backend:
-   ```bash
-   curl -s https://api.ipify.org
-   ```
-3. En el portal: **My Account → Create New Key**. Pegá esa IP en *Allowed IP Addresses*.
-4. Copiá el token JWT generado.
-5. Creá `.env` en la raíz del repo a partir del ejemplo y pegá el token:
-   ```bash
-   cp .env.example .env
-   # y editá COC_TOKEN=...
-   ```
-
-### Correr en desarrollo
-
-Con Docker levanta todo junto:
-
-```bash
-docker compose up
-```
-
-Sin Docker, en dos terminales: `bin/rails server` en `backend/` y `npm run dev`
-acá.
-
-Abrí http://localhost:5173/clan e ingresá tu tag de clan (ej. `#2PP`).
-
-Tip: si querés que cargue uno por defecto, definilo en `.env.local` del root:
+## Estructura
 
 ```
-VITE_DEFAULT_CLAN_TAG=#2PP
+src/
+├── components/
+│   ├── AccountFormModal.jsx    # alta y edición de una cuenta
+│   ├── CategoryDetailModal.jsx # desglose de una categoría, editable con sesión
+│   ├── ClanSearchPanel.jsx     # búsqueda de clan (API oficial)
+│   ├── PlayerSearchPanel.jsx   # búsqueda de jugador (API oficial)
+│   ├── ErrorMessage.jsx  Loader.jsx  Modal.jsx  Navbar.jsx
+├── context/
+│   └── AuthContext.jsx         # quién está logueado, en toda la app
+├── hooks/
+│   ├── useAccount.js           # detalle de una cuenta + edición de niveles
+│   ├── useAccountList.js       # la lista del dashboard
+│   ├── useClan.js  usePlayer.js
+├── pages/
+│   ├── Dashboard.jsx           # las cuentas con su progreso
+│   ├── Login.jsx
+│   └── UserDetail.jsx          # una cuenta: categorías, totales, acciones
+├── services/
+│   ├── http.js                 # el único fetch
+│   ├── accountsService.js      # cuentas, progreso y sincronización
+│   ├── authService.js          # login, logout, /me
+│   └── cocService.js           # API oficial, a través del backend
+├── App.jsx  main.jsx  index.css
 ```
 
-### Endpoints de Clash en el backend
+`useAccount` reemplazó a dos hooks separados (`useAccountReport` y
+`useAccountDetails`). Eran dos porque el Sheet exponía el REPORT y el desglose en
+dos lecturas distintas; el backend arma las dos cosas de la misma consulta.
 
-| Método | Path                              | Devuelve                                         |
-|--------|-----------------------------------|--------------------------------------------------|
-| GET    | `/api/v1/clan/:tag`               | Clan + detalle de cada miembro (fan-out + caché) |
-| GET    | `/api/v1/player/:tag`             | Detalle de un jugador                             |
-| GET    | `/api/v1/clan/:tag/currentwar`    | Guerra actual                                     |
-| GET    | `/api/v1/coc/health`              | Si hay token configurado                          |
+## Editar el progreso
 
-El backend cachea cada consulta 10 minutos y pide los miembros del clan en
-paralelo. Sin `COC_TOKEN` estos endpoints responden 503 explicando que falta;
-el resto de la app no depende de ellos.
+Con sesión, cada ítem del modal de categorías es editable.
 
-### Qué expone la API y qué no
+- **Se guarda al salir del campo o con Enter**, no en cada tecla: escribir "12"
+  pasa por "1", y guardar eso mandaría un nivel que nadie quiso.
+- Si el backend lo rechaza, el campo vuelve al valor real en vez de quedarse
+  mostrando algo que no está en la base.
+- **El report se vuelve a pedir después de cada edición.** No está guardado: el
+  backend lo recalcula a demanda, así que cambiar un nivel lo deja viejo. Esa
+  recarga va en silencio, sin loader.
+- Un poder de héroe aparece dos veces —suelto en `GUARDIANES` y colgado de su
+  héroe—, así que al actualizar se reemplaza en los dos lados.
 
-| Sección           | API oficial |
-|-------------------|-------------|
+## Rutas
+
+| Path          | Página      | Necesita sesión |
+|---------------|-------------|-----------------|
+| `/`           | Dashboard   | no |
+| `/user/:id`   | UserDetail  | no para ver; sí para editar |
+| `/login`      | Login       | — |
+
+La búsqueda de clan y de jugador vive en el dashboard, como paneles en modal.
+
+## Qué expone la API oficial y qué no
+
+| Sección | ¿La API la trae? |
+|---|---|
 | Héroes, mascotas, equipamiento | Sí |
-| Tropas / hechizos / máquinas de asedio | Sí |
-| Donaciones, copas, war stars   | Sí |
-| Guerra actual y warlog         | Sí |
-| **Defensas, trampas, muros**   | **No** — siguen necesitando Sheet o entrada manual |
+| Tropas, hechizos, máquinas de asedio | Sí |
+| Donaciones, copas, war stars, guerra actual | Sí |
+| **Defensas, trampas, muros** | **No** — carga manual |
 
-## 10. Troubleshooting
+Por eso el botón de sincronizar muestra un resumen y no un simple "listo": deja
+sin tocar las defensas y las trampas, lo que tiene candado y lo que el catálogo
+todavía no tiene mapeado al nombre en inglés.
 
-- **"No se pudo leer el Google Sheet (HTTP 401/403)":** el sheet no está
-  compartido como público. Repetí el paso 1.
-- **Veo columnas raras (`col_0`, `col_1`...):** la primera fila del sheet
-  no tiene encabezados. Agregá una fila de cabecera con los nombres de columna.
-- **No aparece el filtro/orden que esperaba:** los selects de "Ordenar" y
-  "Filtrar columna" se construyen con todas las cabeceras del sheet, así
-  que basta con ajustar la fila de encabezados.
+## Si algo no anda
+
+- **La pantalla queda en blanco y la consola dice `does not provide an export
+  named ...`:** Vite está sirviendo una versión cacheada del módulo. Se arregla
+  con `docker compose restart frontend`.
+- **Un cambio no aparece por más que guardes:** el bind mount de Docker puede
+  quedarse con una copia vieja. Comparar `md5sum` dentro y fuera del contenedor
+  antes de dudar del código.
+- **La búsqueda de clan o jugador da 503 o 403:** falta el `COC_TOKEN` o está
+  registrado para otra IP. Ver el README de la raíz.
