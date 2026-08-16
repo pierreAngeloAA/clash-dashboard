@@ -60,6 +60,21 @@ export async function deleteAccount(id) {
 }
 
 /**
+ * Trae el progreso real desde la API oficial de Clash y lo aplica. Exige sesion
+ * y que la cuenta tenga tag.
+ *
+ * Devuelve `{ resumen, account }`. El resumen importa tanto como el resultado:
+ * la API no expone defensas ni trampas, y el catalogo todavia tiene elementos
+ * sin mapear al nombre en ingles, asi que una sincronizacion normal deja mucho
+ * sin tocar. Decir solo "listo" ocultaria eso.
+ */
+export async function syncAccount(id) {
+  const { body } = await sendJson(`/accounts/${id}/sincronizar`, 'POST');
+
+  return body;
+}
+
+/**
  * Corrige a mano el progreso de un elemento. Exige sesion.
  *
  * El elemento se pide dentro de su cuenta y no por su id suelto: es como lo

@@ -1,0 +1,127 @@
+# Puente entre el catalogo y la API oficial.
+#
+# El catalogo salio del Google Sheet, con los nombres en español. La API
+# responde en ingles. Sin este mapeo, sincronizar no encuentra nada que
+# actualizar aunque todo lo demas funcione.
+#
+# Se aplica con:
+#
+#   bin/rails clash:mapear
+#
+# ATENCION: un nombre mal escrito **no da error**. Simplemente deja ese elemento
+# sin sincronizar para siempre, y nadie se entera. Por eso lo que esta abajo hay
+# que verificarlo contra la API antes de confiar en el:
+#
+#   bin/rails 'clash:nombres[#TAG_DE_UN_JUGADOR]'
+#
+# Esa tarea imprime los nombres exactos que devuelve la API y marca con ✓ los
+# que ya estan mapeados. Lo que quede sin ✓ es lo que falta o esta mal escrito.
+#
+# Los que aparecen en blanco son elementos nuevos del juego cuyo nombre en
+# ingles no se pudo confirmar. Se dejan vacios a proposito: es preferible que
+# figuren como "sin mapear" en el informe a que queden mal.
+#
+# Defensas y trampas no estan porque la API no las expone: son carga manual.
+
+REY BARBARO:
+  REY BARBARO: Barbarian King
+REINA ARQUERA:
+  REINA ARQUERA: Archer Queen
+PRINCIPE ESBIRROS:
+  PRINCIPE ESBIRROS: Minion Prince
+GRAN CENTINELA:
+  GRAN CENTINELA: Grand Warden
+LUCHADORA REAL:
+  LUCHADORA REAL: Royal Champion
+DUQUE DRAGON:
+  DUQUE DRAGON:
+
+TROPAS CLARAS:
+  Barbaro: Barbarian
+  Arquera: Archer
+  Gigante: Giant
+  Duende: Goblin
+  Rompemuros: Wall Breaker
+  Globo: Balloon
+  Mago: Wizard
+  Curandera: Healer
+  Dragon: Dragon
+  P.E.K.K.A: P.E.K.K.A
+  Bebe Dragon: Baby Dragon
+  Minero: Miner
+  Dragon Electrico: Electro Dragon
+  Yeti: Yeti
+  Monta Dragones: Dragon Rider
+  Titanide Electrica: Electro Titan
+  Druida salvaje:
+  Lancero:
+  Golem meteorico:
+
+TROPAS OSCURAS:
+  Esbirro: Minion
+  Monta puercos: Hog Rider
+  valquiria: Valkyrie
+  Golem: Golem
+  Bruja: Witch
+  Sabueso de Lava: Lava Hound
+  Lanza Rocas: Bowler
+  Golem de Hielo: Ice Golem
+  Cazadora de Heroes: Headhunter
+  Centinela Aprendiz: Apprentice Warden
+  Druida: Druid
+  Horno:
+  Bruja Caída:
+
+HECHIZOS CLAROS:
+  Rayo: Lightning Spell
+  Curativo: Healing Spell
+  Furia: Rage Spell
+  Salto: Jump Spell
+  Hielo: Freeze Spell
+  Clonador: Clone Spell
+  Invisibilidad: Invisibility Spell
+  Invocacion: Recall Spell
+  Reanimacion:
+  Totem:
+
+HECHIZOS OSCUROS:
+  Veneno: Poison Spell
+  Terremoto: Earthquake Spell
+  Aceleracion: Haste Spell
+  Esqueletico: Skeleton Spell
+  Murcielagos: Bat Spell
+  Crecimiento Salvaje: Overgrowth Spell
+  Bloque de Hielo:
+  Cólera:
+
+MAQUINAS DE ASEDIO:
+  Destroza Muros: Wall Wrecker
+  Dirigible Belico: Battle Blimp
+  Arroja Piedras: Stone Slammer
+  Cuartel de Asedio: Siege Barracks
+  Lanza Troncos: Log Launcher
+  Lanza Llamas: Flame Flinger
+  Excavadora de Batalla: Battle Drill
+  Lanzatropas: Troop Launcher
+  Aerovagon:
+
+ANIMALES:
+  L.A.S.S.I: L.A.S.S.I
+  Búho electrico: Electro Owl
+  Yak: Mighty Yak
+  Unicornio: Unicorn
+  Morsa glacial: Frosty
+  Pangolin excavador: Diggy
+  Lagarto venenoso: Poison Lizard
+  Fenix: Phoenix
+  Zorro espiritual: Spirit Fox
+  Medusa furiosa: Angry Jelly
+  Achus:
+  Cuervo avaricioso:
+
+# Los poderes de heroe. El Sheet los titula GUARDIANES y guarda solo tres, con
+# nombres que no se pudieron cruzar con el catalogo de equipamiento de la API.
+GUARDIANES:
+  TIRADORA:
+  DESTRUCTOR:
+  ARROJATRONCOS:

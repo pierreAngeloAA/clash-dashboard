@@ -4,6 +4,7 @@ import {
   deleteAccount,
   fetchAccount,
   fetchAccountList,
+  syncAccount,
   updateAccount,
   updateAccountItem,
 } from './accountsService';
@@ -122,6 +123,38 @@ describe('cliente de las cuentas', () => {
       });
 
       await expect(deleteAccount(14)).resolves.toBeUndefined();
+    });
+  });
+
+  describe('syncAccount', () => {
+    it('dispara la sincronizacion de la cuenta', async () => {
+      responder({ resumen: { actualizados: 3 }, account: {} });
+
+      await syncAccount(5);
+
+      expect(urlLlamada()).toBe('/api/v1/accounts/5/sincronizar');
+      expect(opcionesDelFetch().method).toBe('POST');
+    });
+
+    // El resumen importa tanto como el resultado: la API no expone defensas ni
+    // trampas, asi que una sincronizacion normal deja mucho sin tocar.
+    it('devuelve el resumen junto con la cuenta', async () => {
+      const respuesta = {
+        resumen: { actualizados: 3, sinMapear: 29 },
+        account: { account: { id: 5 }, report: {} },
+      };
+      responder(respuesta);
+
+      await expect(syncAccount(5)).resolves.toEqual(respuesta);
+    });
+
+    it('propaga el mensaje cuando la API rechaza el token', async () => {
+      responder(
+        { error: 'Invalid authorization: API key does not allow access from IP' },
+        { ok: false, status: 502 }
+      );
+
+      await expect(syncAccount(5)).rejects.toThrow(/Invalid authorization/);
     });
   });
 
