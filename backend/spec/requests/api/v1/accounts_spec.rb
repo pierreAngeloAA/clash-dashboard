@@ -74,6 +74,57 @@ RSpec.describe "Api::V1::Accounts" do
 
       expect(response.parsed_body["accounts"].first).not_to have_key("report")
     end
+
+    # De todo el report, el porcentaje global si viaja en la lista: es la barra
+    # de progreso de cada tarjeta del dashboard.
+    it "incluye el porcentaje de progreso de cada cuenta" do
+      agregar("NIVELES DEFENSAS", 10, 4)
+      agregar("NIVELES DEFENSAS", 10, 6)
+
+      get "/api/v1/accounts"
+
+      expect(response.parsed_body["accounts"].first["progresoPct"]).to eq(50.0)
+    end
+
+    it "devuelve 0 de progreso para la cuenta sin elementos" do
+      cuenta
+
+      get "/api/v1/accounts"
+
+      expect(response.parsed_body["accounts"].first["progresoPct"]).to eq(0.0)
+    end
+
+    it "da el mismo porcentaje que el detalle de la cuenta" do
+      agregar("NIVELES DEFENSAS", 10, 3)
+
+      get "/api/v1/accounts"
+      en_la_lista = response.parsed_body["accounts"].first["progresoPct"]
+      get "/api/v1/accounts/#{cuenta.id}"
+
+      expect(en_la_lista).to eq(response.parsed_body.dig("report", "progresoPct"))
+    end
+
+    # El progreso se agrega para todas las cuentas de una vez. Si se calculara
+    # cuenta por cuenta, el numero de consultas creceria con las filas.
+    it "no dispara una consulta por cuenta al calcular el progreso" do
+      def consultas_de_la_lista
+        consultas = 0
+        contador = ->(*, payload) { consultas += 1 unless payload[:name] == "SCHEMA" }
+
+        ActiveSupport::Notifications.subscribed(contador, "sql.active_record") do
+          get "/api/v1/accounts"
+        end
+
+        consultas
+      end
+
+      create(:account, nombre: "Una")
+      con_una = consultas_de_la_lista
+
+      create_list(:account, 5, town_hall: nil)
+
+      expect(consultas_de_la_lista).to eq(con_una)
+    end
   end
 
   describe "GET /api/v1/accounts/:id" do
@@ -182,6 +233,31 @@ RSpec.describe "Api::V1::Accounts" do
       expect(response.parsed_body["report"]).to include(
         "progresoPct" => 50.0, "faltantePct" => 50.0, "hasReport" => true
       )
+    end
+
+    # La fila HEROES agrega seis secciones. Sin esta lista el frontend tendria
+    # que saberse los nombres de los heroes para abrir su desglose.
+    it "dice de que secciones sale cada categoria del report" do
+      agregar("NIVELES DEFENSAS", 10, 4)
+      agregar("REY BARBARO", 10, 4)
+      agregar("REINA ARQUERA", 10, 4)
+
+      get "/api/v1/accounts/#{cuenta.id}"
+
+      categorias = response.parsed_body.dig("report", "categories")
+        .to_h { |c| [ c["label"], c["secciones"] ] }
+      expect(categorias["NIVELES DEFENSAS"]).to eq([ "NIVELES DEFENSAS" ])
+      expect(categorias["HEROES"]).to contain_exactly("REY BARBARO", "REINA ARQUERA")
+    end
+
+    it "no le atribuye a HEROES las secciones de heroe que la cuenta no tiene" do
+      agregar("REY BARBARO", 10, 4)
+
+      get "/api/v1/accounts/#{cuenta.id}"
+
+      heroes = response.parsed_body.dig("report", "categories")
+        .find { |c| c["label"] == "HEROES" }
+      expect(heroes["secciones"]).to eq([ "REY BARBARO" ])
     end
 
     it "recalcula el report despues de editar un nivel, sin datos guardados" do

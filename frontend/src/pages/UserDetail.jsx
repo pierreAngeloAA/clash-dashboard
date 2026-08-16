@@ -3,9 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import Loader from '../components/Loader';
 import ErrorMessage from '../components/ErrorMessage';
 import CategoryDetailModal from '../components/CategoryDetailModal';
-import { useAccountList } from '../hooks/useAccountList';
-import { useAccountReport } from '../hooks/useAccountReport';
-import { useAccountDetails } from '../hooks/useAccountDetails';
+import { useAccount } from '../hooks/useAccount';
 
 const initialsOf = (name) => {
   if (!name) return '?';
@@ -22,32 +20,17 @@ const TOTALS_ORDER = [
 
 export default function UserDetail() {
   const { id } = useParams();
-  const { accounts } = useAccountList();
-  const { report, loading, error, refetch } = useAccountReport(id);
-  const { details } = useAccountDetails(id);
+  const { account, secciones, report, loading, error, refetch } = useAccount(id);
   const [openCategory, setOpenCategory] = useState(null);
 
-  const account = accounts.find((a) => a.gid === id);
+  if (loading && !account) return <Loader />;
 
-  if (loading && !report) return <Loader />;
+  // El backend responde 404 con su propio mensaje cuando el id no existe, asi
+  // que no hace falta distinguir "no encontrada" de cualquier otro fallo.
   if (error) return <ErrorMessage message={error} onRetry={refetch} />;
+  if (!account) return null;
 
-  if (!account && !report) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-        <h2 className="text-xl font-bold text-slate-900">Cuenta no encontrada</h2>
-        <p className="text-slate-500 mt-2">
-          No existe una pestaña con id <code>{id}</code>.
-        </p>
-        <Link to="/" className="btn-ghost mt-6 inline-flex">
-          ← Volver al dashboard
-        </Link>
-      </div>
-    );
-  }
-
-  const playerName = account?.playerName || `Cuenta ${id}`;
-  const townHall = account?.townHall;
+  const { nombre, townHall } = account;
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fadeIn">
@@ -58,10 +41,10 @@ export default function UserDetail() {
       <section className="bg-gradient-to-br from-brand-600 to-brand-800 text-white rounded-2xl p-6 sm:p-8 shadow-card">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
           <div className="h-20 w-20 rounded-2xl bg-white/15 backdrop-blur grid place-items-center text-3xl font-bold">
-            {initialsOf(playerName)}
+            {initialsOf(nombre)}
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold truncate">{playerName}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold truncate">{nombre}</h1>
             {townHall != null && (
               <p className="mt-1 text-brand-100 text-sm">Town Hall {townHall}</p>
             )}
@@ -81,16 +64,17 @@ export default function UserDetail() {
 
       {report && !report.hasReport && (
         <section className="mt-6 bg-white rounded-2xl shadow-card border border-slate-100 p-6 text-center text-slate-500">
-          Esta pestaña no tiene un bloque <code>REPORT</code> en el Sheet, así
-          que no hay agregado para mostrar.
+          Esta cuenta todavía no tiene progreso cargado, así que no hay nada que
+          agregar.
         </section>
       )}
 
       {openCategory && (
         <CategoryDetailModal
-          category={openCategory}
-          items={details?.sections?.[openCategory] ?? []}
-          summary={report?.categories.find((c) => c.label === openCategory)}
+          category={openCategory.label}
+          // Una fila puede agregar varias secciones: HEROES son seis.
+          items={openCategory.secciones.flatMap((s) => secciones?.[s] ?? [])}
+          summary={openCategory}
           onClose={() => setOpenCategory(null)}
         />
       )}
@@ -107,7 +91,7 @@ export default function UserDetail() {
                   <CategoryRow
                     key={c.label}
                     category={c}
-                    onClick={() => setOpenCategory(c.label)}
+                    onClick={() => setOpenCategory(c)}
                   />
                 ))}
               </ul>

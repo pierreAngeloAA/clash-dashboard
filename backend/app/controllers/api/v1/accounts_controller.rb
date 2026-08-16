@@ -11,8 +11,15 @@ module Api
 
       def index
         cuentas = Account.ordenadas
+        # Una sola consulta agregada para todas las cuentas, en vez de una por
+        # fila: la lista pinta una barra de progreso por cuenta.
+        progresos = cuentas.progreso_pct
 
-        render json: { accounts: cuentas.map { |cuenta| AccountSerializer.new(cuenta).resumen } }
+        render json: {
+          accounts: cuentas.map do |cuenta|
+            AccountSerializer.new(cuenta, progreso_pct: progresos.fetch(cuenta.id, 0.0)).resumen
+          end
+        }
       end
 
       def show
