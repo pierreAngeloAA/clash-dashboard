@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
 import UserDetail from './pages/UserDetail';
 
 export default function App() {
@@ -10,6 +11,7 @@ export default function App() {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/user/:id" element={<UserDetail />} />
           <Route
             path="*"
