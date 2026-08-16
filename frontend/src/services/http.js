@@ -51,6 +51,21 @@ export function cuandoSePierdaLaSesion(callback) {
 }
 
 /**
+ * Rails contesta de dos formas segun el tipo de fallo: un `error` suelto cuando
+ * la peticion no procede (401, 404), y un `errors` con la lista de mensajes de
+ * validacion cuando el dato no sirve (422). Los dos casos ya vienen en español
+ * y con los nombres de los campos traducidos, asi que se muestran tal cual.
+ */
+function mensajeDeError(body, status) {
+  if (body?.error) return body.error;
+  if (Array.isArray(body?.errors) && body.errors.length > 0) {
+    return body.errors.join('. ');
+  }
+
+  return `Error ${status} desde el backend.`;
+}
+
+/**
  * Devuelve { body, res }. La respuesta cruda hace falta para el login, que lee
  * el token del header Authorization en vez del cuerpo.
  *
@@ -78,7 +93,7 @@ async function pedir(path, { ignorar401 = false, ...opciones } = {}) {
   }
 
   if (!res.ok) {
-    throw new Error(body?.error || `Error ${res.status} desde el backend.`);
+    throw new Error(mensajeDeError(body, res.status));
   }
 
   return { body, res };

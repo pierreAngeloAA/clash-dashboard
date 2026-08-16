@@ -1,0 +1,79 @@
+# Despliegue en Render: base de datos, API y frontend.
+#
+# Se aplica desde el dashboard con Blueprints → New Blueprint Instance, apuntando
+# a este repo. Render lee este archivo y crea los tres servicios.
+#
+# Verificado antes de escribirlo, levantando la imagen de produccion contra una
+# base real: la imagen construye, `db:prepare` corre solo al arrancar, Thruster
+# respeta HTTP_PORT y la API responde con force_ssl activo.
+
+databases:
+  - name: clash-db
+    databaseName: clash_dashboard_production
+    user: clash
+    plan: free
+
+services:
+  # ---------------------------------------------------------------- API Rails
+  - type: web
+    name: clash-api
+    runtime: docker
+    plan: free
+    region: oregon
+    # El Dockerfile de produccion que genera Rails: multi-stage, usuario sin
+    # privilegios y Thruster al frente. El Dockerfile.dev de al lado no sirve
+    # aca, es el que incluye rspec y debug.
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /up
+    # No se define dockerCommand a proposito. El entrypoint corre `db:prepare`
+    # solo cuando los dos ultimos argumentos son `./bin/rails server`, que es el
+    # CMD por defecto. Sobreescribirlo dejaria la base sin migrar.
+    envVars:
+      # Thruster escucha en el 80 por defecto; Render espera el 10000.
+      - key: HTTP_PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: clash-db
+          property: connectionString
+      # No hay master.key en el repo: se saco y se roto. Sin secret_key_base
+      # Rails no arranca en produccion, asi que va por variable de entorno.
+      - key: SECRET_KEY_BASE
+        generateValue: true
+      # Sin esto Devise firmaria los tokens con secret_key_base. Separarlo
+      # permite rotar uno sin invalidar lo otro.
+      - key: JWT_SECRET
+        generateValue: true
+      # El origen que rack-cors deja pasar. Se completa a mano despues del
+      # primer deploy, cuando se sabe la URL definitiva del frontend.
+      - key: FRONTEND_URL
+        sync: false
+      # Atado a una IP: hay que declarar la de salida de Render en
+      # https://developer.clashofclans.com/. Sin el, la busqueda de clan y
+      # jugador responde 503 y el resto de la app funciona igual.
+      - key: COC_TOKEN
+        sync: false
+
+  # ----------------------------------------------------------- Frontend build
+  - type: web
+    name: clash-front
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    routes:
+      # El frontend pide /api/v1/... con rutas relativas, asi que el navegador ve
+      # todo del mismo origen y CORS no entra en juego. Es el mismo esquema que
+      # el proxy de Vite en desarrollo.
+      #
+      # OJO: si Render le asigna a la API un nombre distinto de `clash-api`
+      # (pasa cuando el nombre ya esta tomado y le agrega un sufijo), hay que
+      # corregir este destino con la URL real y volver a aplicar el blueprint.
+      - type: rewrite
+        source: /api/*
+        destination: https://clash-api.onrender.com/api/*
+      # El router del cliente maneja el resto de las rutas.
+      - type: rewrite
+        source: /*
+        destination: /index.html
