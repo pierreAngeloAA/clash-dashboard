@@ -40,8 +40,8 @@ export default function CategoryDetailModal({
               {summary ? (
                 <>
                   <p className="text-sm">
-                    El Sheet no tiene un desglose ítem-por-ítem para esta
-                    categoría. El REPORT agrega:
+                    No hay desglose ítem-por-ítem para esta categoría. El total
+                    agregado es:
                   </p>
                   <div className="inline-flex flex-col items-center bg-slate-50 rounded-xl px-6 py-4">
                     <p className="text-3xl font-bold text-slate-900 tabular-nums">
@@ -59,8 +59,8 @@ export default function CategoryDetailModal({
             </div>
           ) : (
             <ul className="divide-y divide-slate-100">
-              {items.map((item, i) => (
-                <ItemRow key={`${item.name}-${item.idx || i}`} item={item} />
+              {items.map((item) => (
+                <ItemRow key={item.id} item={item} />
               ))}
             </ul>
           )}
@@ -77,10 +77,12 @@ function ItemRow({ item }) {
     <li className="px-5 py-3.5">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex items-center gap-2">
-          {item.idx && (
-            <span className="text-xs text-slate-400 tabular-nums">#{item.idx}</span>
+          {item.indice != null && (
+            <span className="text-xs text-slate-400 tabular-nums">
+              #{item.indice}
+            </span>
           )}
-          <p className="font-medium text-slate-900 truncate">{item.name}</p>
+          <p className="font-medium text-slate-900 truncate">{item.nombre}</p>
         </div>
         <p
           className={`text-sm font-semibold tabular-nums whitespace-nowrap ${

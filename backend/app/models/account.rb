@@ -35,6 +35,35 @@ class Account < ApplicationRecord
   scope :ordenadas, -> { order(:orden, :nombre) }
   scope :sincronizables, -> { where.not(tag_coc: nil) }
 
+  # El porcentaje de progreso de todas las cuentas del scope, en una sola
+  # consulta agregada: { id_de_cuenta => 87.5 }.
+  #
+  # La lista del dashboard pinta una barra por fila. Pedirle el report completo
+  # a ReportCalculator cuenta por cuenta seria una consulta agregada por fila, y
+  # de ese report la lista solo usa este numero.
+  def self.progreso_pct
+    AccountItem
+      .where(account_id: all)
+      .group(:account_id)
+      .pluck(
+        Arel.sql("account_id"),
+        Arel.sql("SUM(max_level)"),
+        Arel.sql("SUM(max_level - current_level)")
+      )
+      .to_h do |id, total, faltante|
+        [ id, porcentaje(total.to_i, faltante.to_i) ]
+      end
+  end
+
+  # Misma redondeo que ReportCalculator, para que la barra de la lista y la del
+  # detalle no muestren dos numeros distintos para la misma cuenta.
+  def self.porcentaje(total, faltante)
+    return 0.0 if total.zero?
+
+    (((total - faltante).to_f / total) * 100).round(2)
+  end
+  private_class_method :porcentaje
+
   # El Sheet nombra las pestañas como "Pierre TH15". Al importar se separan el
   # nombre y el ayuntamiento para poder ordenar y filtrar por nivel.
   def self.separar_town_hall(nombre_pestania)

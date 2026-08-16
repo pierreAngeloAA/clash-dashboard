@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Loader from '../components/Loader';
 import ErrorMessage from '../components/ErrorMessage';
@@ -6,11 +6,11 @@ import ClanSearchPanel from '../components/ClanSearchPanel';
 import PlayerSearchPanel from '../components/PlayerSearchPanel';
 import Modal from '../components/Modal';
 import { useAccountList } from '../hooks/useAccountList';
-import { fetchAccountReport } from '../services/sheetsService';
 
 export default function Dashboard() {
+  // La lista ya trae el progreso de cada cuenta. Antes habia que pedir el
+  // REPORT de cada pestaña del Sheet por separado, una peticion por tarjeta.
   const { accounts, loading, error, refetch } = useAccountList();
-  const [reports, setReports] = useState({});
 
   const [clanInput, setClanInput] = useState('');
   const [clanTag, setClanTag] = useState('');
@@ -31,27 +31,6 @@ export default function Dashboard() {
     setPlayerInput(memberTag);
     setPlayerTag(memberTag);
   };
-
-  useEffect(() => {
-    if (!accounts.length) return;
-    let cancelled = false;
-    accounts.forEach((a) => {
-      fetchAccountReport(a.gid)
-        .then((data) => {
-          if (!cancelled) setReports((prev) => ({ ...prev, [a.gid]: data }));
-        })
-        .catch((err) => {
-          if (!cancelled)
-            setReports((prev) => ({
-              ...prev,
-              [a.gid]: { __error: err.message },
-            }));
-        });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [accounts]);
 
   if (loading && accounts.length === 0) return <Loader />;
   if (error) return <ErrorMessage message={error} onRetry={refetch} />;
@@ -78,13 +57,13 @@ export default function Dashboard() {
       <section className="mb-4">
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Cuentas</h1>
         <p className="mt-1 text-sm text-slate-500">
-          {accounts.length} cuentas leídas desde el Google Sheet.
+          {accounts.length} cuentas.
         </p>
       </section>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {accounts.map((a) => (
-          <AccountCard key={a.gid} account={a} report={reports[a.gid]} />
+          <AccountCard key={a.id} account={a} />
         ))}
       </div>
 
@@ -138,22 +117,23 @@ function SearchBox({ label, placeholder, value, onChange, onSubmit }) {
   );
 }
 
-function AccountCard({ account, report }) {
-  const isLoading = !report;
-  const errored = report && report.__error;
-  const pct = report && !errored ? report.progresoPct : null;
+function AccountCard({ account }) {
+  const pct = account.progresoPct;
 
   return (
     <Link
-      to={`/user/${account.gid}`}
+      to={`/user/${account.id}`}
       className="bg-white rounded-2xl shadow-card border border-slate-100 p-4 hover:border-brand-300 hover:shadow-md transition"
     >
       <div className="flex items-center justify-between">
         <div className="min-w-0">
           <p className="font-semibold text-slate-900 truncate">
-            {account.playerName}
+            {account.nombre}
           </p>
-          <p className="text-xs text-slate-500 truncate">{account.name}</p>
+          {/* Sin tag la cuenta no se puede sincronizar con la API oficial. */}
+          <p className="text-xs text-slate-500 truncate">
+            {account.tagCoc || 'sin tag'}
+          </p>
         </div>
         {account.townHall != null && (
           <div className="text-right">
@@ -167,13 +147,7 @@ function AccountCard({ account, report }) {
         <div className="flex justify-between text-xs text-slate-500 mb-1">
           <span>Progreso</span>
           <span className="font-medium text-slate-700">
-            {isLoading
-              ? '…'
-              : errored
-                ? 'error'
-                : pct == null
-                  ? 's/d'
-                  : `${pct.toFixed(1)}%`}
+            {pct == null ? 's/d' : `${pct.toFixed(1)}%`}
           </span>
         </div>
         <div className="h-2 rounded-full bg-slate-100 overflow-hidden">

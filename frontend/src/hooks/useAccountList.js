@@ -1,17 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
-import { fetchAccountList } from '../services/sheetsService';
+import { fetchAccountList } from '../services/accountsService';
 
 export function useAccountList() {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const load = useCallback(async ({ force = false } = {}) => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const list = await fetchAccountList({ force });
-      setAccounts(list);
+      setAccounts(await fetchAccountList());
     } catch (err) {
       setError(err.message || 'Error al cargar las cuentas.');
     } finally {
@@ -23,7 +22,5 @@ export function useAccountList() {
     load();
   }, [load]);
 
-  const refetch = useCallback(() => load({ force: true }), [load]);
-
-  return { accounts, loading, error, refetch };
+  return { accounts, loading, error, refetch: load };
 }

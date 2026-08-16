@@ -24,7 +24,7 @@ export default function App() {
       </main>
       <footer className="border-t border-slate-200 bg-white">
         <div className="max-w-7xl mx-auto px-4 py-4 text-xs text-slate-500 flex flex-col sm:flex-row justify-between gap-1">
-          <span>Clash Dashboard · datos cacheados 5 min en localStorage.</span>
+          <span>Clash Dashboard · datos leídos de la base.</span>
           <span>Hecho con React + Vite + Tailwind.</span>
         </div>
       </footer>

@@ -56,7 +56,9 @@ class ReportCalculator
     filas = sueltas.map { |categoria, suma| fila(categoria, suma) }
 
     heroes = sumar(GameItem::HEROES)
-    filas << fila("HEROES", heroes) if heroes[:total].positive?
+    if heroes[:total].positive?
+      filas << fila("HEROES", heroes, secciones: GameItem::HEROES & sumas_por_categoria.keys)
+    end
 
     filas.sort_by { |f| f[:label] }
   end
@@ -78,9 +80,13 @@ class ReportCalculator
     }
   end
 
-  def fila(label, suma)
+  # `secciones` dice de que secciones del progreso sale la fila. Casi siempre es
+  # ella misma, pero HEROES agrega seis, y sin esto el frontend tendria que
+  # saberse de memoria cuales son para poder abrir el desglose de la fila.
+  def fila(label, suma, secciones: [ label ])
     {
       label: label,
+      secciones: secciones,
       total: suma[:total],
       faltante: suma[:faltante],
       pctDone: porcentaje_hecho(suma),

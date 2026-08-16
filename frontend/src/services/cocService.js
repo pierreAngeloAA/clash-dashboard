@@ -3,32 +3,24 @@
  * El token vive solo ahi: esta atado a una IP y no puede viajar al navegador.
  */
 
+import { getJson } from './http';
+
 const normalizeTag = (tag) => {
   const clean = String(tag || '').trim().toUpperCase();
   if (!clean) return '';
   return clean.startsWith('#') ? clean : `#${clean}`;
 };
 
-async function getJson(url) {
-  const res = await fetch(url);
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(body?.error || `Error ${res.status} desde el backend.`);
-  }
-  return body;
-}
+const tagParam = (tag) => encodeURIComponent(normalizeTag(tag));
 
 export function fetchClan(tag) {
-  const t = encodeURIComponent(normalizeTag(tag));
-  return getJson(`/api/v1/clan/${t}`);
+  return getJson(`/clan/${tagParam(tag)}`);
 }
 
 export function fetchPlayer(tag) {
-  const t = encodeURIComponent(normalizeTag(tag));
-  return getJson(`/api/v1/player/${t}`);
+  return getJson(`/player/${tagParam(tag)}`);
 }
 
 export function fetchCurrentWar(clanTag) {
-  const t = encodeURIComponent(normalizeTag(clanTag));
-  return getJson(`/api/v1/clan/${t}/currentwar`);
+  return getJson(`/clan/${tagParam(clanTag)}/currentwar`);
 }
