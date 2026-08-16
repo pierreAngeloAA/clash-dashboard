@@ -266,6 +266,17 @@ RSpec.describe "Api::V1::Accounts escritura" do
   describe "POST /api/v1/accounts/:id/sincronizar" do
     let(:cuenta) { create(:account, :sincronizable, town_hall: nil) }
 
+    # El cliente saca el token de COC_TOKEN y sin token falla antes de pedir
+    # nada. Esta maquina puede tenerlo cargado y el CI no, asi que se fija aca:
+    # de lo contrario el resultado del spec depende de donde corra.
+    around do |ejemplo|
+      anterior = ENV["COC_TOKEN"]
+      ENV["COC_TOKEN"] = "token-de-prueba"
+      ejemplo.run
+    ensure
+      ENV["COC_TOKEN"] = anterior
+    end
+
     def sincronizar(headers: con_sesion)
       post "/api/v1/accounts/#{cuenta.id}/sincronizar", headers: headers, as: :json
     end
