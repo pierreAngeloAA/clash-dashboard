@@ -262,4 +262,96 @@ RSpec.describe "Api::V1::Accounts escritura" do
       expect(item_ajeno.reload.current_level).to eq(1)
     end
   end
+
+  describe "POST /api/v1/accounts/:id/sincronizar" do
+    let(:cuenta) { create(:account, :sincronizable, town_hall: nil) }
+
+    def sincronizar(headers: con_sesion)
+      post "/api/v1/accounts/#{cuenta.id}/sincronizar", headers: headers, as: :json
+    end
+
+    def con_catalogo(nombre_api, current_level, max_level)
+      catalogo = create(:game_item, categoria: "TROPAS CLARAS",
+        nombre: nombre_api, nombre_api: nombre_api, max_level: 100)
+      AccountItem.create!(account: cuenta, game_item: catalogo,
+        current_level: current_level, max_level: max_level, fuente: "sheet")
+    end
+
+    def responder_api(entradas)
+      stub_request(:get, %r{/players/})
+        .to_return(status: 200, body: { "troops" => entradas }.to_json,
+          headers: { "Content-Type" => "application/json" })
+    end
+
+    it "rechaza la sincronizacion sin sesion" do
+      item = con_catalogo("Barbarian", 5, 12)
+      responder_api([ { "name" => "Barbarian", "level" => 11, "maxLevel" => 12,
+        "village" => "home" } ])
+
+      sincronizar(headers: {})
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(item.reload.current_level).to eq(5)
+    end
+
+    it "aplica el progreso que trae la API" do
+      item = con_catalogo("Barbarian", 5, 12)
+      responder_api([ { "name" => "Barbarian", "level" => 11, "maxLevel" => 12,
+        "village" => "home" } ])
+
+      sincronizar
+
+      expect(response).to have_http_status(:ok)
+      expect(item.reload.current_level).to eq(11)
+    end
+
+    # Sin el resumen, una sincronizacion que actualizo tres de setenta elementos
+    # porque el catalogo esta a medio mapear se ve igual de exitosa que una
+    # completa.
+    it "devuelve el resumen de lo que hizo" do
+      con_catalogo("Barbarian", 5, 12)
+      responder_api([ { "name" => "Barbarian", "level" => 11, "maxLevel" => 12,
+        "village" => "home" } ])
+
+      sincronizar
+
+      expect(response.parsed_body["resumen"]).to include("actualizados" => 1)
+    end
+
+    it "devuelve la cuenta con el report ya recalculado" do
+      con_catalogo("Barbarian", 0, 10)
+      responder_api([ { "name" => "Barbarian", "level" => 10, "maxLevel" => 10,
+        "village" => "home" } ])
+
+      sincronizar
+
+      expect(response.parsed_body.dig("account", "report", "progresoPct")).to eq(100.0)
+    end
+
+    it "explica en español que la cuenta no tiene tag" do
+      sin_tag = create(:account, town_hall: nil)
+
+      post "/api/v1/accounts/#{sin_tag.id}/sincronizar", headers: con_sesion, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["error"]).to match(/no tiene tag/)
+    end
+
+    # La API rechaza el token cuando la IP cambia. Es el fallo mas comun y no es
+    # culpa de quien aprieta el boton.
+    it "traduce el fallo de la API en vez de reventar" do
+      con_catalogo("Barbarian", 5, 12)
+      stub_request(:get, %r{/players/}).to_return(
+        status: 403,
+        body: { "reason" => "accessDenied.invalidIp",
+                "message" => "Invalid authorization" }.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+
+      sincronizar
+
+      expect(response).to have_http_status(:bad_gateway)
+      expect(response.parsed_body["error"]).to be_present
+    end
+  end
 end

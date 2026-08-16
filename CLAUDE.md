@@ -113,6 +113,13 @@ Devise + `devise-jwt`, con revocación por JTIMatcher: al cerrar sesión se rota
 - **Vite cachea los módulos.** Después de cambiar los `export` de un servicio
   puede seguir sirviendo la versión anterior y tirar un `SyntaxError` de export
   inexistente. Se arregla con `docker compose restart frontend`.
+- **El bind mount se puede quedar con una copia vieja.** Pasó con
+  `config/routes.rb`: el archivo estaba editado en el disco pero el contenedor
+  seguía viendo el anterior, y la ruta nueva daba 404 sin ninguna otra señal. Si
+  un cambio no aparece, comparar antes de dudar del código:
+  `md5sum backend/config/routes.rb` contra
+  `docker compose exec backend md5sum config/routes.rb`. Se arregla reiniciando
+  el servicio.
 - **No existe `backend/config/master.key`.** Se sacó del repo y se rotó en
   90bece5, así que `credentials.yml.enc` no se puede desencriptar. En producción
   hay que definir `SECRET_KEY_BASE` por variable de entorno.

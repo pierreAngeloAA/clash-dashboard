@@ -7,7 +7,11 @@ import AccountFormModal from '../components/AccountFormModal';
 import Modal from '../components/Modal';
 import { useAccount } from '../hooks/useAccount';
 import { useAuth } from '../context/AuthContext';
-import { deleteAccount, updateAccount } from '../services/accountsService';
+import {
+  deleteAccount,
+  syncAccount,
+  updateAccount,
+} from '../services/accountsService';
 
 const initialsOf = (name) => {
   if (!name) return '?';
@@ -31,6 +35,8 @@ export default function UserDetail() {
   const navigate = useNavigate();
   const [editando, setEditando] = useState(false);
   const [borrando, setBorrando] = useState(false);
+  const [sincronizando, setSincronizando] = useState(false);
+  const [resultado, setResultado] = useState(null);
 
   const guardar = async (datos) => {
     await updateAccount(id, datos);
@@ -42,6 +48,20 @@ export default function UserDetail() {
   const borrar = async () => {
     await deleteAccount(id);
     navigate('/');
+  };
+
+  const sincronizar = async () => {
+    setSincronizando(true);
+    setResultado(null);
+    try {
+      const { resumen } = await syncAccount(id);
+      setResultado({ resumen });
+      refetch({ silencioso: true });
+    } catch (err) {
+      setResultado({ error: err.message || 'No se pudo sincronizar.' });
+    } finally {
+      setSincronizando(false);
+    }
   };
 
   if (loading && !account) return <Loader />;
@@ -61,6 +81,19 @@ export default function UserDetail() {
         </Link>
         {autenticado && (
           <div className="flex gap-2">
+            {/* Sin tag no hay contra que sincronizar, asi que el boton no
+                aparece en vez de aparecer y fallar. */}
+            {account.sincronizable && (
+              <button
+                type="button"
+                onClick={sincronizar}
+                disabled={sincronizando}
+                title="Traer los niveles reales desde la API oficial"
+                className="rounded-lg border border-brand-300 text-brand-700 hover:bg-brand-50 px-3 py-1.5 text-sm font-semibold disabled:opacity-60 transition"
+              >
+                {sincronizando ? 'Sincronizando…' : 'Sincronizar'}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setEditando(true)}
@@ -102,6 +135,13 @@ export default function UserDetail() {
           )}
         </div>
       </section>
+
+      {resultado && (
+        <ResultadoSincronizacion
+          {...resultado}
+          onCerrar={() => setResultado(null)}
+        />
+      )}
 
       {report && !report.hasReport && (
         <section className="mt-6 bg-white rounded-2xl shadow-card border border-slate-100 p-6 text-center text-slate-500">
@@ -186,6 +226,82 @@ export default function UserDetail() {
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * Que dejo la sincronizacion.
+ *
+ * Se muestra el detalle y no un "listo" porque la sincronizacion casi nunca
+ * alcanza a todo: la API no expone defensas ni trampas, el candado protege lo
+ * corregido a mano, y lo que el catalogo no tiene mapeado al nombre en ingles
+ * queda afuera. Un cartel de exito escondiendo que se actualizaron tres de
+ * setenta elementos seria mentir.
+ */
+function ResultadoSincronizacion({ resumen, error, onCerrar }) {
+  if (error) {
+    return (
+      <section
+        role="alert"
+        className="mt-6 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-800 flex justify-between gap-4"
+      >
+        <span>{error}</span>
+        <button onClick={onCerrar} aria-label="Cerrar" className="shrink-0">
+          ✕
+        </button>
+      </section>
+    );
+  }
+
+  const filas = [
+    ['Actualizados', resumen.actualizados],
+    ['Ya estaban al día', resumen.sinCambios],
+    ['Protegidos con candado', resumen.protegidos],
+    ['Fuera del alcance de la API', resumen.sinMapear],
+    ['La API no los devolvió', resumen.noEncontrados],
+    ['Rechazados', resumen.rechazados],
+  ].filter(([, valor]) => valor > 0);
+
+  return (
+    <section className="mt-6 rounded-2xl border border-slate-100 bg-white shadow-card p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="font-semibold text-slate-900">
+            Sincronizado con la API
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            {resumen.actualizados === 0
+              ? 'No hubo nada que actualizar.'
+              : `Se actualizaron ${resumen.actualizados} elementos.`}
+          </p>
+        </div>
+        <button
+          onClick={onCerrar}
+          aria-label="Cerrar"
+          className="rounded-full h-8 w-8 grid place-items-center text-slate-500 hover:bg-slate-100 shrink-0"
+        >
+          ✕
+        </button>
+      </div>
+
+      <dl className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {filas.map(([etiqueta, valor]) => (
+          <div key={etiqueta} className="rounded-xl bg-slate-50 px-3 py-2">
+            <dt className="text-xs text-slate-500">{etiqueta}</dt>
+            <dd className="text-lg font-bold text-slate-900 tabular-nums">
+              {valor}
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      {resumen.sinMapear > 0 && (
+        <p className="mt-3 text-xs text-slate-400">
+          Las defensas y las trampas no las expone la API oficial: siguen siendo
+          carga manual.
+        </p>
+      )}
+    </section>
   );
 }
 

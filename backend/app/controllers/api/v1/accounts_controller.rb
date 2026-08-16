@@ -6,8 +6,19 @@ module Api
     # leia el Google Sheet compartido. Escribir si, porque es lo que reemplaza a
     # editar la planilla a mano.
     class AccountsController < ApplicationController
-      before_action :autenticar!, only: %i[create update destroy]
-      before_action :cargar_cuenta, only: %i[show update destroy]
+      before_action :autenticar!, only: %i[create update destroy sincronizar]
+      before_action :cargar_cuenta, only: %i[show update destroy sincronizar]
+
+      # La API de Clash puede estar caida, sin token o rechazando la IP. Nada de
+      # eso es culpa de quien aprieta el boton, asi que se traduce a un mensaje
+      # en vez de a un 500.
+      rescue_from Clash::Cliente::Error do |e|
+        render json: { error: e.message }, status: :bad_gateway
+      end
+
+      rescue_from Clash::SincronizarCuenta::SinTag do |e|
+        render json: { error: e.message }, status: :unprocessable_content
+      end
 
       def index
         cuentas = Account.ordenadas
@@ -44,6 +55,20 @@ module Api
         @cuenta.poblar_inventario if @cuenta.town_hall != town_hall_anterior
 
         render json: { account: AccountSerializer.new(@cuenta.reload).resumen }
+      end
+
+      # Trae el progreso real desde la API oficial y lo aplica.
+      #
+      # Devuelve el resumen de lo que paso, no solo "listo": una sincronizacion
+      # que actualizo tres elementos de setenta porque el catalogo esta a medio
+      # mapear se ve igual de exitosa desde afuera, y no lo es.
+      def sincronizar
+        informe = Clash::SincronizarCuenta.new(@cuenta).call
+
+        render json: {
+          resumen: informe.resumen,
+          account: AccountSerializer.new(@cuenta.reload).completo
+        }
       end
 
       # Se lleva puesto el progreso de la cuenta (`dependent: :destroy`), no solo
