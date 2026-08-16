@@ -1,0 +1,100 @@
+# Avisa en el PR cuando cambia la forma del proyecto y la documentacion no.
+#
+# La documentacion se desfasa en el momento en que se mergea un cambio, no tres
+# meses despues. Este aviso llega cuando el contexto todavia esta fresco, que es
+# cuando actualizar el README cuesta cinco minutos en vez de media hora.
+#
+# **No bloquea a proposito.** Un check que bloquea entrena a tocar el README con
+# un espacio en blanco para poder mergear, y ahi el chequeo deja de significar
+# algo. Esto es una pregunta, no un porton: la respuesta puede ser perfectamente
+# "no hace falta".
+name: Aviso de documentacion
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  avisar:
+    name: Revisar si la documentacion acompaña
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Comparar los archivos tocados
+        id: revisar
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          cambios=$(git diff --name-only "$BASE" "$HEAD")
+
+          # Archivos que definen la forma del proyecto: si cambian, es probable
+          # que algo de lo que dice la documentacion haya dejado de ser cierto.
+          # Las rutas y el schema entran porque son el contrato de la API y la
+          # forma de los datos; los manifiestos, porque cambian como se levanta.
+          estructurales=$(echo "$cambios" | grep -E \
+            '^(docker-compose\.ya?ml|\.github/workflows/|backend/(Dockerfile|Gemfile|config/routes\.rb|db/schema\.rb)|frontend/(Dockerfile|package\.json|vite\.config\.js))' \
+            || true)
+
+          documentacion=$(echo "$cambios" | grep -E '(^|/)(README\.md|CLAUDE\.md)$' || true)
+
+          if [ -n "$estructurales" ] && [ -z "$documentacion" ]; then
+            echo "avisar=si" >> "$GITHUB_OUTPUT"
+            {
+              echo "lista<<FIN"
+              echo "$estructurales" | sed 's/^/- `/;s/$/`/'
+              echo "FIN"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "avisar=no" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Comentar en el PR
+        if: steps.revisar.outputs.avisar == 'si'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          LISTA: ${{ steps.revisar.outputs.lista }}
+        run: |
+          set -euo pipefail
+
+          # Un solo comentario por PR: en cada push se actualiza el que ya
+          # estaba, en vez de apilar uno nuevo.
+          MARCA="<!-- aviso-docs -->"
+
+          cuerpo=$(cat <<EOF
+          $MARCA
+          Este PR cambia archivos que definen la forma del proyecto, pero no toca
+          el \`README.md\` ni el \`CLAUDE.md\`:
+
+          $LISTA
+
+          ¿Sigue siendo cierto lo que dice la documentacion? Comandos, puertos,
+          carpetas, variables de entorno.
+
+          Si no hace falta cambiar nada, ignorá este comentario: no bloquea el
+          merge.
+          EOF
+          )
+
+          existente=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" \
+            --jq "[.[] | select(.body | contains(\"$MARCA\"))] | last | .id // empty")
+
+          if [ -n "$existente" ]; then
+            gh api --method PATCH \
+              "repos/$GITHUB_REPOSITORY/issues/comments/$existente" \
+              -f body="$cuerpo" >/dev/null
+          else
+            gh api --method POST \
+              "repos/$GITHUB_REPOSITORY/issues/$PR/comments" \
+              -f body="$cuerpo" >/dev/null
+          fi

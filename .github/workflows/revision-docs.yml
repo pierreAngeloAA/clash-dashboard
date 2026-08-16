@@ -1,0 +1,102 @@
+# Red de seguridad: abre un issue de revision cada tres meses.
+#
+# Quien deberia atajar el desfasaje es aviso-docs.yml, que avisa en el PR mismo,
+# cuando el contexto esta fresco. Esto es para lo que se le escapa: cambios que
+# no tocaron ningun archivo estructural pero igual dejaron la documentacion
+# mintiendo.
+#
+# Trimestral y no mensual a proposito. Un recordatorio que aparece y no tiene
+# nada que hacer entrena a ignorar el tablero, y eso cuesta mas caro que la
+# documentacion desfasada.
+#
+# El issue no es un recordatorio vacio: trae los commits del periodo y si
+# tocaron la documentacion o no, que es justo el dato para decidir en un minuto
+# si hay algo que actualizar.
+name: Revision trimestral de la documentacion
+
+on:
+  schedule:
+    # 12:00 UTC del dia 1 de enero, abril, julio y octubre.
+    - cron: "0 12 1 1,4,7,10 *"
+  # Para poder dispararlo a mano desde la pestaña Actions y probarlo sin esperar
+  # al dia 1.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  abrir-issue:
+    name: Abrir el issue de revision
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # El historial completo: hace falta para mirar un mes hacia atras.
+          fetch-depth: 0
+
+      - name: Abrir el issue si no hay uno pendiente
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # Si la revision anterior sigue abierta, no se apila otra: dos
+          # issues pidiendo lo mismo se ignoran los dos.
+          pendiente=$(gh issue list --state open --label "revision-docs" \
+            --json number --jq 'length')
+          if [ "$pendiente" -gt 0 ]; then
+            echo "Ya hay una revision abierta; no se crea otra."
+            exit 0
+          fi
+
+          desde=$(date -u -d '3 months ago' +%Y-%m-%d)
+
+          commits=$(git log --since="$desde" --pretty='- %s' -- . \
+            ':(exclude)README.md' ':(exclude)CLAUDE.md' ':(exclude)*/README.md')
+          docs=$(git log --since="$desde" --pretty='- %s' -- \
+            README.md CLAUDE.md '*/README.md')
+
+          {
+            echo "Revision trimestral de la documentacion, desde el $desde."
+            echo
+            echo "Leer el \`README.md\` de la raiz, el de \`frontend/\` y el"
+            echo "\`CLAUDE.md\`, y corregir lo que ya no sea cierto."
+            echo
+            echo "## Cambios del trimestre"
+            echo
+            if [ -n "$commits" ]; then
+              echo "<details><summary>Commits que no tocaron la documentacion</summary>"
+              echo
+              echo "$commits"
+              echo
+              echo "</details>"
+            else
+              echo "Sin commits de codigo en el periodo."
+            fi
+            echo
+            if [ -n "$docs" ]; then
+              echo "La documentacion si se toco:"
+              echo
+              echo "$docs"
+            else
+              echo "**La documentacion no se toco en todo el trimestre.**"
+            fi
+            echo
+            echo "## Que mirar"
+            echo
+            echo "- Comandos que ya no existen o cambiaron de forma."
+            echo "- Carpetas, archivos o servicios que se movieron o se borraron."
+            echo "- Puertos y variables de entorno."
+            echo "- Decisiones nuevas que a alguien que llega le van a resultar raras."
+            echo "- Que el estado del deploy siga siendo el que dice."
+            echo
+            echo "Si despues de revisarlo no hay nada que cambiar, cerrar el issue"
+            echo "con un comentario diciendolo: eso tambien es informacion."
+          } > cuerpo.md
+
+          gh issue create \
+            --title "Revision de la documentacion — $(date -u +'%B %Y')" \
+            --label "documentation,revision-docs,prioridad: baja" \
+            --body-file cuerpo.md
