@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchAccount, fetchAccountList, updateAccountItem } from './accountsService';
+import {
+  createAccount,
+  deleteAccount,
+  fetchAccount,
+  fetchAccountList,
+  updateAccount,
+  updateAccountItem,
+} from './accountsService';
 
 // El contrato con Rails: de donde cuelga la API, que parte de la respuesta se
 // devuelve y que pasa cuando el backend contesta con un error.
@@ -59,6 +66,62 @@ describe('cliente de las cuentas', () => {
       responder(detalle);
 
       await expect(fetchAccount(7)).resolves.toEqual(detalle);
+    });
+  });
+
+  describe('alta, edicion y borrado de cuentas', () => {
+    it('crea la cuenta con los datos anidados bajo account', async () => {
+      responder({ account: { id: 14, nombre: 'PIERRE' } });
+
+      await createAccount({ nombre: 'PIERRE', town_hall: 15 });
+
+      expect(urlLlamada()).toBe('/api/v1/accounts');
+      expect(opcionesDelFetch().method).toBe('POST');
+      expect(JSON.parse(opcionesDelFetch().body)).toEqual({
+        account: { nombre: 'PIERRE', town_hall: 15 },
+      });
+    });
+
+    it('devuelve la cuenta creada, no el sobre', async () => {
+      responder({ account: { id: 14, nombre: 'PIERRE', tagCoc: '#LJ8V90G0' } });
+
+      await expect(createAccount({ nombre: 'PIERRE' })).resolves.toEqual({
+        id: 14,
+        nombre: 'PIERRE',
+        tagCoc: '#LJ8V90G0',
+      });
+    });
+
+    it('edita la cuenta por id', async () => {
+      responder({ account: { id: 14, townHall: 16 } });
+
+      await updateAccount(14, { town_hall: 16 });
+
+      expect(urlLlamada()).toBe('/api/v1/accounts/14');
+      expect(opcionesDelFetch().method).toBe('PATCH');
+    });
+
+    it('borra la cuenta por id', async () => {
+      responder({});
+
+      await deleteAccount(14);
+
+      expect(urlLlamada()).toBe('/api/v1/accounts/14');
+      expect(opcionesDelFetch().method).toBe('DELETE');
+    });
+
+    // El 204 no trae cuerpo: si el cliente esperara JSON, borrar reventaria.
+    it('no se rompe con el 204 sin cuerpo del borrado', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 204,
+        headers: { get: () => null },
+        json: async () => {
+          throw new Error('sin cuerpo');
+        },
+      });
+
+      await expect(deleteAccount(14)).resolves.toBeUndefined();
     });
   });
 

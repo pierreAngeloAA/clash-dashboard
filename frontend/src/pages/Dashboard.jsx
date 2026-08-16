@@ -5,12 +5,24 @@ import ErrorMessage from '../components/ErrorMessage';
 import ClanSearchPanel from '../components/ClanSearchPanel';
 import PlayerSearchPanel from '../components/PlayerSearchPanel';
 import Modal from '../components/Modal';
+import AccountFormModal from '../components/AccountFormModal';
 import { useAccountList } from '../hooks/useAccountList';
+import { useAuth } from '../context/AuthContext';
+import { createAccount } from '../services/accountsService';
 
 export default function Dashboard() {
   // La lista ya trae el progreso de cada cuenta. Antes habia que pedir el
   // REPORT de cada pestaña del Sheet por separado, una peticion por tarjeta.
   const { accounts, loading, error, refetch } = useAccountList();
+  const { autenticado } = useAuth();
+  const [creando, setCreando] = useState(false);
+
+  const crear = async (datos) => {
+    await createAccount(datos);
+    // La cuenta nueva arranca con el inventario que le genera el backend, asi
+    // que la lista se vuelve a pedir en vez de agregarla a mano.
+    refetch();
+  };
 
   const [clanInput, setClanInput] = useState('');
   const [clanTag, setClanTag] = useState('');
@@ -54,11 +66,22 @@ export default function Dashboard() {
         />
       </div>
 
-      <section className="mb-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Cuentas</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          {accounts.length} cuentas.
-        </p>
+      <section className="mb-4 flex items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Cuentas</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {accounts.length} cuentas.
+          </p>
+        </div>
+        {autenticado && (
+          <button
+            type="button"
+            onClick={() => setCreando(true)}
+            className="rounded-lg bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 text-sm font-semibold whitespace-nowrap transition"
+          >
+            Nueva cuenta
+          </button>
+        )}
       </section>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -66,6 +89,10 @@ export default function Dashboard() {
           <AccountCard key={a.id} account={a} />
         ))}
       </div>
+
+      {creando && (
+        <AccountFormModal onGuardar={crear} onClose={() => setCreando(false)} />
+      )}
 
       {clanTag && (
         <Modal
