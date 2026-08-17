@@ -5,13 +5,19 @@
 
 import { getJson } from './http';
 
-const normalizeTag = (tag) => {
-  const clean = String(tag || '').trim().toUpperCase();
-  if (!clean) return '';
-  return clean.startsWith('#') ? clean : `#${clean}`;
-};
-
-const tagParam = (tag) => encodeURIComponent(normalizeTag(tag));
+/**
+ * El tag viaja **sin** el numeral, aunque la API oficial lo exija: lo agrega el
+ * backend, que normaliza igual `98R828VJ`, `#98R828VJ` o ` 98r828vj `.
+ *
+ * Mandarlo con `#` codificado como `%23` funcionaba en desarrollo y fallaba en
+ * produccion con un 404: el rewrite de Render decodifica `%23` a `#`, y todo lo
+ * que va despues de un numeral en una URL no llega al servidor. Rails recibia
+ * `/api/v1/player/` sin tag y no encontraba ruta.
+ *
+ * Sin `#` no hay nada que codificar, asi que el problema no puede reaparecer.
+ */
+const tagParam = (tag) =>
+  encodeURIComponent(String(tag || '').trim().toUpperCase().replace(/^#/, ''));
 
 export function fetchClan(tag) {
   return getJson(`/clan/${tagParam(tag)}`);

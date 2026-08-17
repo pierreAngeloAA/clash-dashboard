@@ -1,9 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchClan, fetchCurrentWar, fetchPlayer } from './cocService';
 
-// La API exige el tag con "#" y URL-encodeado una sola vez. Como el usuario
-// lo escribe a mano ("2pp", "#2PP", " 2pp "), la normalizacion es la parte
-// del cliente que mas facil se rompe.
+// El tag viaja sin el numeral: lo agrega el backend. Con "#" codificado como
+// "%23" la ruta fallaba en produccion, porque el rewrite de Render lo decodifica
+// y el servidor no recibe nada de lo que va despues.
+//
+// Como el usuario lo escribe a mano ("2pp", "#2PP", " 2pp "), la normalizacion
+// sigue siendo la parte del cliente que mas facil se rompe.
 describe('cliente de la API de Clash of Clans', () => {
   beforeEach(() => {
     global.fetch = vi.fn().mockResolvedValue({
@@ -19,22 +22,30 @@ describe('cliente de la API de Clash of Clans', () => {
   const urlLlamada = () => global.fetch.mock.calls[0][0];
 
   describe('normalizacion del tag', () => {
-    it('agrega el # cuando falta', async () => {
+    it('no manda el numeral cuando el usuario no lo escribe', async () => {
       await fetchClan('2PP');
 
-      expect(urlLlamada()).toBe('/api/v1/clan/%232PP');
+      expect(urlLlamada()).toBe('/api/v1/clan/2PP');
     });
 
-    it('no duplica el # cuando ya viene', async () => {
+    it('le saca el numeral cuando el usuario si lo escribe', async () => {
       await fetchClan('#2PP');
 
-      expect(urlLlamada()).toBe('/api/v1/clan/%232PP');
+      expect(urlLlamada()).toBe('/api/v1/clan/2PP');
     });
 
     it('pasa a mayusculas y recorta espacios', async () => {
       await fetchClan('  #2pp  ');
 
-      expect(urlLlamada()).toBe('/api/v1/clan/%232PP');
+      expect(urlLlamada()).toBe('/api/v1/clan/2PP');
+    });
+
+    // El rewrite de Render decodifica %23 a # y el servidor deja de recibir el
+    // tag. Que no viaje codificado es justamente el arreglo.
+    it('nunca manda un numeral codificado en la ruta', async () => {
+      await fetchClan('#2PP');
+
+      expect(urlLlamada()).not.toContain('%23');
     });
   });
 
@@ -42,13 +53,13 @@ describe('cliente de la API de Clash of Clans', () => {
     it('consulta el detalle de un jugador', async () => {
       await fetchPlayer('LJ8V90G0');
 
-      expect(urlLlamada()).toBe('/api/v1/player/%23LJ8V90G0');
+      expect(urlLlamada()).toBe('/api/v1/player/LJ8V90G0');
     });
 
     it('consulta la guerra actual de un clan', async () => {
       await fetchCurrentWar('2PP');
 
-      expect(urlLlamada()).toBe('/api/v1/clan/%232PP/currentwar');
+      expect(urlLlamada()).toBe('/api/v1/clan/2PP/currentwar');
     });
 
     it('nunca llama directo a la API oficial: el token vive en el servidor', async () => {
