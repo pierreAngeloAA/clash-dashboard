@@ -68,25 +68,28 @@ services:
     name: clash-progreso-web
     runtime: static
     rootDir: frontend
-    # VITE_API_URL entra al build desde la variable de abajo, que Render
-    # completa con la URL real de la API.
-    buildCommand: npm ci && VITE_API_URL="https://$API_HOST/api/v1" npm run build
+    buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
-    envVars:
-      # La clave de todo esto: la URL de la API la resuelve Render mirando el
-      # servicio, no se escribe a mano.
-      #
-      # Antes habia un rewrite de /api hacia una URL fija. El problema no era
-      # que fuera fea: si ese nombre lo registra un tercero, el frontend le
-      # manda las peticiones —con el header Authorization incluido— a un
-      # servicio ajeno, y desde afuera todo parece funcionar.
-      - key: API_HOST
-        fromService:
-          type: web
-          name: clash-progreso-api
-          property: host
     routes:
-      # El router del cliente maneja las rutas: cualquier ruta que no sea un
+      # El frontend pide /api/v1/... con rutas relativas y este rewrite las lleva
+      # a la API, asi que el navegador ve todo del mismo origen y CORS no entra
+      # en juego. Es el mismo esquema que el proxy de Vite en desarrollo.
+      #
+      # Se intento evitar esta URL escrita a mano inyectandola con
+      # `fromService: property: host`, y no funciona: esa propiedad devuelve el
+      # nombre interno del servicio (`clash-progreso-api`, sin dominio), que solo
+      # resuelve dentro de la red privada de Render. El build del sitio estatico
+      # corre fuera, asi que el bundle quedaba pidiendole datos a un host
+      # inexistente.
+      #
+      # Escribirla a mano era riesgoso mientras el nombre podia ser de otro: el
+      # frontend le mandaria las peticiones, con el header Authorization
+      # incluido, a un servicio ajeno. Ya no lo es, el servicio esta creado y es
+      # nuestro. Si algun dia se renombra la API, hay que actualizar esta linea.
+      - type: rewrite
+        source: /api/*
+        destination: https://clash-progreso-api.onrender.com/api/*
+      # El router del cliente maneja el resto: cualquier ruta que no sea un
       # archivo del build cae en index.html.
       - type: rewrite
         source: /*
