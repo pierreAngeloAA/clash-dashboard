@@ -62,10 +62,11 @@ services:
         sync: false
 
   # ----------------------------------------------------------- Frontend build
+  # Sin `plan` ni `region`: un sitio estatico no tiene tipo de instancia, lo
+  # sirve un CDN. Declararlos hace fallar la validacion del blueprint.
   - type: web
     name: clash-progreso-web
     runtime: static
-    plan: free
     rootDir: frontend
     # VITE_API_URL entra al build desde la variable de abajo, que Render
     # completa con la URL real de la API.
