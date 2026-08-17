@@ -35,7 +35,15 @@ module Clash
     end
 
     def initialize(token: ENV["COC_TOKEN"], ttl: TTL)
-      @token = token.presence
+      # Se le saca todo el espacio en blanco, no solo el de los extremos.
+      #
+      # Un JWT no lleva espacios, asi que quitarlos no puede romper un token
+      # valido. Y uno invalido pega fuerte: si el valor trae un salto de linea
+      # —lo que pasa al pegarlo en un formulario web— Net::HTTP levanta
+      # "header field value cannot include CR/LF" al armar la peticion, antes de
+      # salir a la red. Esa excepcion no la atrapa nadie y termina en un 500
+      # vacio, sin ninguna pista de que el problema es un caracter invisible.
+      @token = token.to_s.gsub(/\s+/, "").presence
       @ttl = ttl
     end
 

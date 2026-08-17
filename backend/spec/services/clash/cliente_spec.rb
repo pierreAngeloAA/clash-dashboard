@@ -169,4 +169,31 @@ RSpec.describe Clash::Cliente do
       expect(peticion).to have_been_requested
     end
   end
+
+  # Pegar un JWT largo en un formulario web suele dejarle un salto de linea. Con
+  # el, Net::HTTP levanta "header field value cannot include CR/LF" al armar la
+  # peticion, y eso sale como un 500 vacio sin ninguna pista.
+  describe "tokens con espacios de mas" do
+    it "funciona con un token que trae un salto de linea al final" do
+      stub_jugador("#2PP")
+
+      cliente = described_class.new(token: "un-token\n")
+
+      expect { cliente.jugador("#2PP") }.not_to raise_error
+    end
+
+    it "manda el token limpio en el header" do
+      peticion = stub_request(:get, "#{base}/players/%232PP")
+        .with(headers: { "Authorization" => "Bearer un-token" })
+        .to_return(status: 200, body: "{}", headers: { "Content-Type" => "application/json" })
+
+      described_class.new(token: "  un-token\n").jugador("#2PP")
+
+      expect(peticion).to have_been_requested
+    end
+
+    it "sigue considerando sin token a uno que es solo espacios" do
+      expect(described_class.new(token: " \n ").configurado?).to be(false)
+    end
+  end
 end
