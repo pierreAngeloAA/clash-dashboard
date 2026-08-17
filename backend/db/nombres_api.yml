@@ -17,9 +17,14 @@
 # Esa tarea imprime los nombres exactos que devuelve la API y marca con ✓ los
 # que ya estan mapeados. Lo que quede sin ✓ es lo que falta o esta mal escrito.
 #
-# Los que aparecen en blanco son elementos nuevos del juego cuyo nombre en
-# ingles no se pudo confirmar. Se dejan vacios a proposito: es preferible que
-# figuren como "sin mapear" en el informe a que queden mal.
+# Los nombres salieron de consultar un jugador de TH18 con la API en produccion,
+# no de la memoria. Doce de trece se verificaron ademas comparando el nivel
+# maximo que declara el catalogo con el que devuelve la API: si coinciden, el
+# cruce es el correcto.
+#
+# La excepcion es Reanimacion, que el catalogo declara con maximo 7 y la API con
+# 5. Es igual el cruce correcto —"reanimacion" es revive y no queda ningun otro
+# hechizo sin asignar— pero conviene corregir ese 7, que viene mal del Sheet.
 #
 # Defensas y trampas no estan porque la API no las expone: son carga manual.
 
@@ -34,7 +39,7 @@ GRAN CENTINELA:
 LUCHADORA REAL:
   LUCHADORA REAL: Royal Champion
 DUQUE DRAGON:
-  DUQUE DRAGON:
+  DUQUE DRAGON: Dragon Duke
 
 TROPAS CLARAS:
   Barbaro: Barbarian
@@ -53,9 +58,9 @@ TROPAS CLARAS:
   Yeti: Yeti
   Monta Dragones: Dragon Rider
   Titanide Electrica: Electro Titan
-  Druida salvaje:
-  Lancero:
-  Golem meteorico:
+  Druida salvaje: Root Rider
+  Lancero: Thrower
+  Golem meteorico: Meteor Golem
 
 TROPAS OSCURAS:
   Esbirro: Minion
@@ -69,8 +74,8 @@ TROPAS OSCURAS:
   Cazadora de Heroes: Headhunter
   Centinela Aprendiz: Apprentice Warden
   Druida: Druid
-  Horno:
-  Bruja Caída:
+  Horno: Furnace
+  Bruja Caída: Ruin Witch
 
 HECHIZOS CLAROS:
   Rayo: Lightning Spell
@@ -81,8 +86,8 @@ HECHIZOS CLAROS:
   Clonador: Clone Spell
   Invisibilidad: Invisibility Spell
   Invocacion: Recall Spell
-  Reanimacion:
-  Totem:
+  Reanimacion: Revive Spell
+  Totem: Totem Spell
 
 HECHIZOS OSCUROS:
   Veneno: Poison Spell
@@ -91,8 +96,8 @@ HECHIZOS OSCUROS:
   Esqueletico: Skeleton Spell
   Murcielagos: Bat Spell
   Crecimiento Salvaje: Overgrowth Spell
-  Bloque de Hielo:
-  Cólera:
+  Bloque de Hielo: Ice Block Spell
+  Cólera: Angry Spell
 
 MAQUINAS DE ASEDIO:
   Destroza Muros: Wall Wrecker
@@ -103,7 +108,7 @@ MAQUINAS DE ASEDIO:
   Lanza Llamas: Flame Flinger
   Excavadora de Batalla: Battle Drill
   Lanzatropas: Troop Launcher
-  Aerovagon:
+  Aerovagon: Sky Wagon
 
 ANIMALES:
   L.A.S.S.I: L.A.S.S.I
@@ -116,11 +121,15 @@ ANIMALES:
   Fenix: Phoenix
   Zorro espiritual: Spirit Fox
   Medusa furiosa: Angry Jelly
-  Achus:
-  Cuervo avaricioso:
+  Achus: Sneezy
+  Cuervo avaricioso: Greedy Raven
 
-# Los poderes de heroe. El Sheet los titula GUARDIANES y guarda solo tres, con
-# nombres que no se pudieron cruzar con el catalogo de equipamiento de la API.
+# Los poderes de heroe. El Sheet los titula GUARDIANES y guarda solo tres.
+#
+# Se dejan sin mapear a proposito. La API devuelve 37 piezas de equipamiento, y
+# ninguna cuadra: las suyas llegan a nivel 18 o 27 segun sean comunes o epicas, y
+# estas tres declaran maximo 5. Parecen etiquetas propias del Sheet mas que
+# equipamiento real, asi que asignarles cualquier nombre seria inventar.
 GUARDIANES:
   TIRADORA:
   DESTRUCTOR:
