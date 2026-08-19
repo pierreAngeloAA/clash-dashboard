@@ -125,7 +125,7 @@ export default function Dashboard() {
         />
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
         {accounts.map((a) => (
           <AccountCard key={a.id} account={a} />
         ))}
@@ -304,46 +304,48 @@ function SearchBox({ label, placeholder, value, onChange, onSubmit }) {
 }
 
 function AccountCard({ account }) {
-  const pct = account.progresoPct;
+  const pct = account.progresoPct ?? 0;
+  const completo = pct >= 100;
 
   return (
     <Link
       to={`/user/${account.id}`}
-      className="bg-white rounded-2xl shadow-card border border-slate-100 p-4 hover:border-brand-300 hover:shadow-md transition"
+      className="group relative overflow-hidden bg-white rounded-xl border border-slate-200/80 shadow-card hover:shadow-cardHover hover:border-brand-300 hover:-translate-y-0.5 transition-all duration-200 p-3"
     >
-      <div className="flex items-center justify-between">
-        <div className="min-w-0">
-          <p className="font-semibold text-slate-900 truncate">
+      <div className="flex items-center gap-2">
+        {account.townHall != null && (
+          <span className="shrink-0 grid place-items-center h-8 w-8 rounded-lg bg-brand-600 text-white text-xs font-bold tabular-nums">
+            {account.townHall}
+          </span>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-sm text-slate-900 truncate leading-tight">
             {account.nombre}
           </p>
           {/* Sin tag la cuenta no se puede sincronizar con la API oficial. */}
-          <p className="text-xs text-slate-500 truncate">
+          <p className="text-[11px] text-slate-400 truncate leading-tight">
             {account.tagCoc || 'sin tag'}
           </p>
         </div>
-        {account.townHall != null && (
-          <div className="text-right">
-            <p className="text-xs text-slate-500">TH</p>
-            <p className="font-bold text-brand-700">{account.townHall}</p>
-          </div>
-        )}
       </div>
 
-      <div className="mt-3">
-        <div className="flex justify-between text-xs text-slate-500 mb-1">
-          <span>Progreso</span>
-          <span className="font-medium text-slate-700">
-            {pct == null ? 's/d' : `${pct.toFixed(1)}%`}
-          </span>
+      <div className="mt-2.5 flex items-center gap-2">
+        {/* Marca fina, anclada a la izquierda, con la punta redondeada. */}
+        <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${
+              completo ? 'bg-emerald-500' : 'bg-brand-500'
+            }`}
+            style={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
+          />
         </div>
-        <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-          {pct != null && (
-            <div
-              className="h-full bg-brand-500 transition-all"
-              style={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
-            />
-          )}
-        </div>
+        <span
+          className={`text-xs font-bold tabular-nums shrink-0 ${
+            completo ? 'text-emerald-600' : 'text-slate-700'
+          }`}
+        >
+          {pct.toFixed(0)}%
+        </span>
       </div>
     </Link>
   );

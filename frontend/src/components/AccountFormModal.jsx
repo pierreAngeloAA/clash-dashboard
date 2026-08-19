@@ -55,10 +55,10 @@ export default function AccountFormModal({ account, onGuardar, onClose }) {
   return (
     <Modal
       title={editando ? `Editar ${account.nombre}` : 'Nueva cuenta'}
-      maxWidth="max-w-lg"
+      maxWidth="max-w-md"
       onClose={onClose}
     >
-      <form onSubmit={enviar} className="space-y-4">
+      <form onSubmit={enviar} className="space-y-3">
         <Campo
           id="nombre"
           etiqueta="Nombre"
@@ -95,23 +95,27 @@ export default function AccountFormModal({ account, onGuardar, onClose }) {
           </p>
         )}
 
-        <Campo
-          id="tag_coc"
-          etiqueta="Tag de Clash"
-          value={campos.tag_coc}
-          onChange={cambiar('tag_coc')}
-          placeholder="#LJ8V90G0"
-          ayuda="Sin tag, la cuenta no se puede sincronizar con la API oficial. Se normaliza solo."
-        />
-
-        <Campo
-          id="orden"
-          etiqueta="Orden en la lista"
-          type="number"
-          value={campos.orden}
-          onChange={cambiar('orden')}
-          ayuda="Menor primero. A igual orden se desempata por nombre."
-        />
+        <div className="grid grid-cols-[1fr,auto] gap-3">
+          <Campo
+            id="tag_coc"
+            etiqueta="Tag de Clash"
+            value={campos.tag_coc}
+            onChange={cambiar('tag_coc')}
+            placeholder="#LJ8V90G0"
+          />
+          <Campo
+            id="orden"
+            etiqueta="Orden"
+            type="number"
+            value={campos.orden}
+            onChange={cambiar('orden')}
+            className="w-20"
+          />
+        </div>
+        <p className="text-xs text-slate-400 -mt-1">
+          Sin tag no se puede sincronizar con la API. El orden va de menor a
+          mayor y desempata por nombre.
+        </p>
 
         {error && (
           <p
@@ -146,19 +150,19 @@ function numeroONulo(valor) {
   return Number.isFinite(numero) ? numero : null;
 }
 
-function Campo({ id, etiqueta, ayuda, ...props }) {
+function Campo({ id, etiqueta, ayuda, className = '', ...props }) {
   return (
-    <div>
+    <div className={className}>
       <label
         htmlFor={id}
-        className="block text-xs font-semibold uppercase tracking-wider text-slate-500"
+        className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500"
       >
         {etiqueta}
       </label>
       <input
         id={id}
         {...props}
-        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
       />
       {ayuda && <p className="mt-1 text-xs text-slate-400">{ayuda}</p>}
     </div>

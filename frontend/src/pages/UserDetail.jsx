@@ -374,31 +374,48 @@ function ConfirmarBorrado({ account, onConfirmar, onClose }) {
 function CategoryRow({ category, onClick }) {
   const pct = category.pctDone ?? 0;
   const done = category.total - category.faltante;
+  const completo = category.faltante === 0;
+
   return (
     <li>
       <button
         type="button"
         onClick={onClick}
-        className="w-full text-left px-5 py-4 hover:bg-slate-50 transition focus:outline-none focus:bg-slate-50"
+        className="group w-full text-left px-5 py-3 hover:bg-slate-50 transition focus:outline-none focus-visible:bg-slate-50"
       >
-        <div className="flex items-center justify-between gap-4">
-          <p className="font-medium text-slate-900 truncate">{category.label}</p>
-          <div className="flex items-center gap-2 whitespace-nowrap">
-            <span className="text-sm font-semibold text-slate-700">
+        <div className="flex items-center gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline gap-2">
+              <p className="font-medium text-slate-900 truncate">{category.label}</p>
+              <span className="text-xs text-slate-400 tabular-nums whitespace-nowrap">
+                {done}/{category.total}
+              </span>
+            </div>
+            {/* La barra va debajo del nombre y ocupa solo su columna: antes
+                cruzaba la fila entera y cada categoria gastaba el doble de alto. */}
+            <div className="mt-1.5 h-1 rounded-full bg-slate-100 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  completo ? 'bg-emerald-500' : 'bg-brand-500'
+                }`}
+                style={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
+            <span
+              className={`text-sm font-semibold tabular-nums ${
+                completo ? 'text-emerald-600' : 'text-slate-700'
+              }`}
+            >
               {pct.toFixed(1)}%
             </span>
-            <span className="text-slate-400">›</span>
+            <span className="text-slate-300 group-hover:text-slate-400 transition">
+              ›
+            </span>
           </div>
         </div>
-        <div className="mt-2 h-2 rounded-full bg-slate-100 overflow-hidden">
-          <div
-            className="h-full bg-brand-500 transition-all"
-            style={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
-          />
-        </div>
-        <p className="mt-1 text-xs text-slate-500">
-          {done} / {category.total} listos · faltan {category.faltante}
-        </p>
       </button>
     </li>
   );
