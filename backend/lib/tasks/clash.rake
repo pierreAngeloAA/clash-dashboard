@@ -111,4 +111,39 @@ namespace :clash do
     faltan = GameItem.de_la_api.where(nombre_api: nil).count
     puts faltan.zero? ? "El catalogo quedo mapeado entero." : "Faltan #{faltan} sin mapear."
   end
+
+  # Los topes que trajo el Sheet son el maximo del juego para todos, sin importar
+  # el ayuntamiento: un TH11 figuraba con el canon a 21 igual que un TH18. Asi el
+  # progreso se medi­a contra algo inalcanzable y todas las cuentas bajas se veian
+  # peor de lo que estan.
+  desc "Ajusta el tope de cada elemento al que habilita el ayuntamiento de su cuenta"
+  task :ajustar_topes, [ :aplicar ] => :environment do |_t, args|
+    aplicar = args[:aplicar] == "aplicar"
+    puts aplicar ? "Aplicando cambios." : "Simulacion: no se modifica nada. Corre con [aplicar] para aplicar."
+    puts
+
+    Account.ordenadas.each do |cuenta|
+      next puts "#{cuenta.nombre}: sin ayuntamiento cargado, se saltea" if cuenta.town_hall.blank?
+
+      bajan = suben = 0
+
+      cuenta.account_items.includes(game_item: :game_item_levels).find_each do |item|
+        tope = item.game_item.max_level_para(cuenta.town_hall)
+        next if tope.nil? || tope == item.max_level
+
+        # El nivel que la cuenta ya tiene manda: bajar el tope por debajo dejaria
+        # el elemento en un estado que ni siquiera pasa la validacion.
+        tope = [ tope, item.current_level ].max
+        next if tope == item.max_level
+
+        tope < item.max_level ? bajan += 1 : suben += 1
+        item.update_columns(max_level: tope) if aplicar
+      end
+
+      next if bajan.zero? && suben.zero?
+
+      puts "#{cuenta.nombre} (TH#{cuenta.town_hall}): #{bajan} topes bajan, #{suben} suben"
+      puts "  progreso #{cuenta.reload.report[:progresoPct]}%" if aplicar
+    end
+  end
 end

@@ -40,6 +40,11 @@ rescue ActiveRecord::PendingMigrationError => e
   abort e.to_s.strip
 end
 RSpec.configure do |config|
+  # GameItem memoiza el ayuntamiento mas alto del catalogo, y entre ejemplos ese
+  # catalogo cambia: sin limpiarlo, un ejemplo que crea etiquetas le deja el
+  # valor puesto al siguiente.
+  config.before { GameItem.olvidar_town_hall_maximo! }
+
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
   config.fixture_paths = [
     Rails.root.join('spec/fixtures')
