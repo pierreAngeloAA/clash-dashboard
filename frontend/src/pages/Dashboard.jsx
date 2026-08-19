@@ -68,17 +68,15 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5">
         <SearchBox
-          label="Buscar clan"
-          placeholder="Tag del clan (ej. #2PP)"
+          placeholder="Buscar clan · #2PP"
           value={clanInput}
           onChange={setClanInput}
           onSubmit={submitClan}
         />
         <SearchBox
-          label="Buscar jugador"
-          placeholder="Tag del jugador (ej. #ABC123)"
+          placeholder="Buscar jugador · #ABC123"
           value={playerInput}
           onChange={setPlayerInput}
           onSubmit={submitPlayer}
@@ -155,6 +153,29 @@ export default function Dashboard() {
         </Modal>
       )}
     </div>
+  );
+}
+
+function SearchBox({ placeholder, value, onChange, onSubmit }) {
+  return (
+    <form
+      onSubmit={onSubmit}
+      className="flex gap-1.5 bg-white/90 backdrop-blur rounded-lg border border-slate-200 shadow-card p-1.5"
+    >
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        aria-label={placeholder}
+        className="flex-1 min-w-0 rounded-md px-2.5 py-1.5 text-sm bg-transparent placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40"
+      />
+      <button
+        type="submit"
+        className="rounded-md bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 text-sm font-semibold shrink-0 transition"
+      >
+        Buscar
+      </button>
+    </form>
   );
 }
 
@@ -276,33 +297,6 @@ function ResultadoSincronizacion({ total, cuentas, error, onCerrar }) {
   );
 }
 
-function SearchBox({ label, placeholder, value, onChange, onSubmit }) {
-  return (
-    <form
-      onSubmit={onSubmit}
-      className="bg-white rounded-2xl shadow-card border border-slate-100 p-4 flex flex-col gap-2"
-    >
-      <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-        {label}
-      </label>
-      <div className="flex gap-2">
-        <input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-        />
-        <button
-          type="submit"
-          className="rounded-lg bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 text-sm font-semibold"
-        >
-          Buscar
-        </button>
-      </div>
-    </form>
-  );
-}
-
 function AccountCard({ account }) {
   const pct = account.progresoPct ?? 0;
   const completo = pct >= 100;
@@ -310,7 +304,7 @@ function AccountCard({ account }) {
   return (
     <Link
       to={`/user/${account.id}`}
-      className="group relative overflow-hidden bg-white rounded-xl border border-slate-200/80 shadow-card hover:shadow-cardHover hover:border-brand-300 hover:-translate-y-0.5 transition-all duration-200 p-3"
+      className="group relative overflow-hidden bg-white rounded-xl border border-slate-200/70 shadow-tarjeta hover:shadow-tarjetaHover hover:border-brand-300 hover:-translate-y-1 transition-all duration-200 p-3"
     >
       <div className="flex items-center gap-2">
         {account.townHall != null && (

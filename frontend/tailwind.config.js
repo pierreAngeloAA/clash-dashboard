@@ -23,6 +23,12 @@ export default {
       boxShadow: {
         card: '0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.06)',
         cardHover: '0 8px 28px rgba(15, 23, 42, 0.12)',
+        // Las tarjetas del tablero van sobre una foto del juego, no sobre un
+        // fondo plano: necesitan una sombra mas marcada para despegarse.
+        tarjeta:
+          '0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 10px rgba(15, 23, 42, 0.08), 0 12px 28px rgba(15, 23, 42, 0.10)',
+        tarjetaHover:
+          '0 2px 4px rgba(15, 23, 42, 0.08), 0 10px 20px rgba(15, 23, 42, 0.12), 0 24px 48px rgba(29, 42, 137, 0.18)',
       },
       keyframes: {
         fadeIn: {
