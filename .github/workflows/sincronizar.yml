@@ -1,0 +1,70 @@
+# Sincroniza el progreso de las cuentas con la API oficial de Clash, todos los
+# dias.
+#
+# Corre aca y no dentro de la app por una razon concreta: el servicio de Rails
+# esta en el plan gratuito de Render y se duerme por inactividad, asi que un job
+# interno no se ejecutaria. Los cron jobs de Render, que serian lo prolijo,
+# tampoco entran en ese plan.
+#
+# Esta peticion, ademas de sincronizar, despierta al servicio.
+name: Sincronizar con la API de Clash
+
+on:
+  schedule:
+    # 09:00 UTC, unas 4 de la mañana en Colombia. El progreso en Clash cambia
+    # despacio, asi que una vez por dia sobra.
+    - cron: "0 9 * * *"
+  # Para dispararlo a mano desde la pestaña Actions sin esperar al dia siguiente.
+  workflow_dispatch:
+
+jobs:
+  sincronizar:
+    name: Traer los niveles reales
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sincronizar todas las cuentas con tag
+        env:
+          API: ${{ secrets.API_URL }}
+          EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${API:-}" ] || [ -z "${EMAIL:-}" ] || [ -z "${PASSWORD:-}" ]; then
+            echo "Faltan los secrets API_URL, ADMIN_EMAIL o ADMIN_PASSWORD."
+            exit 1
+          fi
+
+          # El servicio gratuito se duerme y el primer request tarda: se lo
+          # despierta antes para que el login no muera esperando.
+          echo "Despertando el servicio..."
+          curl -sS -o /dev/null --max-time 180 --retry 3 --retry-all-errors "$API/up" || true
+
+          # El token viaja en el header Authorization, no en el cuerpo.
+          echo "Iniciando sesion..."
+          TOKEN=$(curl -sS -D - -o /dev/null --max-time 60 \
+            -X POST "$API/api/v1/login" \
+            -H 'Content-Type: application/json' \
+            -d "{\"user\":{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}}" \
+            | grep -i '^authorization:' | sed 's/[Aa]uthorization: //' | tr -d '\r')
+
+          if [ -z "$TOKEN" ]; then
+            echo "No se pudo iniciar sesion: el backend no devolvio token."
+            exit 1
+          fi
+
+          # Una llamada a la API oficial por cuenta: el tiempo crece con las
+          # cuentas que tengan tag cargado.
+          echo "Sincronizando..."
+          curl -sS --max-time 900 \
+            -X POST "$API/api/v1/accounts/sincronizar" \
+            -H "Authorization: $TOKEN" > respuesta.json || true
+
+          # Se cierra la sesion pase lo que pase: el token dura 12 horas y no hay
+          # motivo para dejarlo vivo despues de esto.
+          curl -sS -o /dev/null --max-time 60 \
+            -X DELETE "$API/api/v1/logout" -H "Authorization: $TOKEN" || true
+
+          python3 .github/scripts/informe_sincronizacion.py < respuesta.json
