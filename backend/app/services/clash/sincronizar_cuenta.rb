@@ -122,7 +122,7 @@ module Clash
 
     def aplicar(item, dato, informe)
       nivel = dato["level"].to_i
-      tope = dato["maxLevel"].to_i
+      tope = tope_para(item, dato, nivel)
 
       if item.current_level == nivel && item.max_level == tope
         return informe.sin_cambios << item
@@ -135,6 +135,27 @@ module Clash
       # es decir cuando el juego subio el maximo y el catalogo todavia no. No
       # frena la sincronizacion del resto.
       informe.rechazados << { item: item, motivo: e.record.errors.full_messages.join(". ") }
+    end
+
+    # El tope de un elemento es el de su ayuntamiento, no el maximo del juego: la
+    # API informa `maxLevel` como el maximo absoluto, y medir contra el a una
+    # cuenta de TH11 la muestra mucho peor de lo que esta, porque le cuenta como
+    # faltante lo que su ayuntamiento todavia no habilita.
+    #
+    # El nivel que el jugador tiene manda por encima del calculo. A 32 elementos
+    # del catalogo les faltan las etiquetas de sus niveles altos, asi que el tope
+    # calculado puede quedar corto; si eso pasa, un nivel real por encima del
+    # tope no solo seria falso, ademas no pasaria la validacion.
+    def tope_para(item, dato, nivel)
+      # Cuando el catalogo no sabe el tope del ayuntamiento, la API es mejor
+      # fuente que el `max_level` del catalogo: el catalogo salio del Sheet y
+      # puede estar viejo, la API responde lo que el juego dice hoy.
+      calculado = item.game_item.max_level_para(account.town_hall) || dato["maxLevel"].to_i
+
+      # El nivel que el jugador tiene manda por encima del calculo: a 32
+      # elementos les faltan las etiquetas de sus niveles altos, y un nivel real
+      # por encima del tope no solo seria falso, ademas no pasaria la validacion.
+      [ calculado, nivel ].max
     end
 
     # { "barbarian" => { "level" => 80, "maxLevel" => 95 }, ... }

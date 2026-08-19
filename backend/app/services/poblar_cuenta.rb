@@ -46,8 +46,19 @@ class PoblarCuenta
 
     return { cantidad: fila.cantidad, max_level: fila.max_level } if fila
 
-    # Sin datos por ayuntamiento se asume una unidad al maximo del juego.
-    { cantidad: 1, max_level: game_item.max_level }
+    # Sin fila por ayuntamiento, el tope sale de las etiquetas de los niveles,
+    # que dicen en que TH se desbloquea cada uno. Antes se asumia el maximo
+    # absoluto del juego, y eso le daba a una cuenta de TH11 el mismo tope que a
+    # una de TH18: el progreso se medi­a contra algo inalcanzable.
+    # Sin etiquetas que lo digan, se cae al maximo del juego: es lo que habia
+    # antes de esto y no rompe nada, aunque sobrestime el tope.
+    tope = game_item.max_level_para(account.town_hall) || game_item.max_level
+    return nil if tope.zero?
+
+    # La cantidad se deja en una unidad: las etiquetas dicen hasta que nivel
+    # llega un elemento, no cuantos hay. Los que ya vinieron del Sheet conservan
+    # la suya, que es la correcta.
+    { cantidad: 1, max_level: tope }
   end
 
   def crear_faltantes(game_item, disponibilidad)
