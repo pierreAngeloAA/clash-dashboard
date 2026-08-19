@@ -125,7 +125,7 @@ export default function Dashboard() {
         />
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
         {accounts.map((a) => (
           <AccountCard key={a.id} account={a} />
         ))}
@@ -310,64 +310,42 @@ function AccountCard({ account }) {
   return (
     <Link
       to={`/user/${account.id}`}
-      className="group relative overflow-hidden bg-white rounded-2xl border border-slate-200/80 shadow-card hover:shadow-cardHover hover:border-brand-300 hover:-translate-y-0.5 transition-all duration-200"
+      className="group relative overflow-hidden bg-white rounded-xl border border-slate-200/80 shadow-card hover:shadow-cardHover hover:border-brand-300 hover:-translate-y-0.5 transition-all duration-200 p-3"
     >
-      {/* El ayuntamiento tiñe apenas la cabecera: da un ancla visual sin
-          agregar otro numero que leer. */}
-      <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-brand-50/70 to-transparent" />
-
-      <div className="relative p-4">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="font-bold text-slate-900 truncate leading-tight">
-              {account.nombre}
-            </p>
-            {/* Sin tag la cuenta no se puede sincronizar con la API oficial. */}
-            {account.tagCoc ? (
-              <p className="mt-0.5 text-xs text-slate-400 font-mono truncate">
-                {account.tagCoc}
-              </p>
-            ) : (
-              <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
-                sin tag
-              </span>
-            )}
-          </div>
-
-          {account.townHall != null && (
-            <div className="shrink-0 grid place-items-center h-11 w-11 rounded-xl bg-brand-600 text-white shadow-sm">
-              <span className="text-[9px] font-semibold leading-none opacity-70">
-                TH
-              </span>
-              <span className="text-base font-bold leading-none tabular-nums">
-                {account.townHall}
-              </span>
-            </div>
-          )}
+      <div className="flex items-center gap-2">
+        {account.townHall != null && (
+          <span className="shrink-0 grid place-items-center h-8 w-8 rounded-lg bg-brand-600 text-white text-xs font-bold tabular-nums">
+            {account.townHall}
+          </span>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-sm text-slate-900 truncate leading-tight">
+            {account.nombre}
+          </p>
+          {/* Sin tag la cuenta no se puede sincronizar con la API oficial. */}
+          <p className="text-[11px] text-slate-400 truncate leading-tight">
+            {account.tagCoc || 'sin tag'}
+          </p>
         </div>
+      </div>
 
-        <div className="mt-4">
-          <div className="flex items-baseline justify-between mb-1.5">
-            <span className="text-xs text-slate-500">Progreso</span>
-            <span
-              className={`text-lg font-bold tabular-nums leading-none ${
-                completo ? 'text-emerald-600' : 'text-slate-900'
-              }`}
-            >
-              {pct.toFixed(1)}
-              <span className="text-xs font-medium text-slate-400">%</span>
-            </span>
-          </div>
-          {/* Marca fina con la punta redondeada, anclada a la izquierda. */}
-          <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${
-                completo ? 'bg-emerald-500' : 'bg-brand-500'
-              }`}
-              style={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
-            />
-          </div>
+      <div className="mt-2.5 flex items-center gap-2">
+        {/* Marca fina, anclada a la izquierda, con la punta redondeada. */}
+        <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${
+              completo ? 'bg-emerald-500' : 'bg-brand-500'
+            }`}
+            style={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
+          />
         </div>
+        <span
+          className={`text-xs font-bold tabular-nums shrink-0 ${
+            completo ? 'text-emerald-600' : 'text-slate-700'
+          }`}
+        >
+          {pct.toFixed(0)}%
+        </span>
       </div>
     </Link>
   );
