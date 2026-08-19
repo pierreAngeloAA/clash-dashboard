@@ -365,4 +365,104 @@ RSpec.describe "Api::V1::Accounts escritura" do
       expect(response.parsed_body["error"]).to be_present
     end
   end
+
+  describe "POST /api/v1/accounts/sincronizar" do
+    around do |ejemplo|
+      anterior = ENV["COC_TOKEN"]
+      ENV["COC_TOKEN"] = "token-de-prueba"
+      ejemplo.run
+    ensure
+      ENV["COC_TOKEN"] = anterior
+    end
+
+    def con_progreso(nombre, nombre_api)
+      cuenta = create(:account, :sincronizable, nombre: nombre, town_hall: nil)
+      catalogo = create(:game_item, categoria: "TROPAS CLARAS",
+        nombre: nombre_api, nombre_api: nombre_api, max_level: 100)
+      AccountItem.create!(account: cuenta, game_item: catalogo,
+        current_level: 5, max_level: 12, fuente: "sheet")
+
+      cuenta
+    end
+
+    def responder(tag, entradas)
+      stub_request(:get, %r{/players/#{CGI.escape(tag)}}).to_return(
+        status: 200,
+        body: { "troops" => entradas }.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+    end
+
+    def nivel(nombre, valor)
+      { "name" => nombre, "level" => valor, "maxLevel" => 12, "village" => "home" }
+    end
+
+    it "rechaza la sincronizacion sin sesion" do
+      post "/api/v1/accounts/sincronizar", as: :json
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "sincroniza todas las cuentas que tienen tag" do
+      una = con_progreso("Una", "Barbarian")
+      responder(una.tag_coc, [ nivel("Barbarian", 11) ])
+
+      post "/api/v1/accounts/sincronizar", headers: con_sesion, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(una.account_items.first.reload.current_level).to eq(11)
+    end
+
+    it "deja afuera a las cuentas sin tag" do
+      una = con_progreso("Con tag", "Barbarian")
+      create(:account, nombre: "Sin tag", town_hall: nil)
+      responder(una.tag_coc, [])
+
+      post "/api/v1/accounts/sincronizar", headers: con_sesion, as: :json
+
+      expect(response.parsed_body["total"]).to eq(1)
+      expect(response.parsed_body["cuentas"].first["nombre"]).to eq("Con tag")
+    end
+
+    # Un total global taparia justamente el caso que importa: que una cuenta
+    # haya fallado y las demas no.
+    it "devuelve el detalle de cada cuenta, no un total" do
+      una = con_progreso("Una", "Barbarian")
+      responder(una.tag_coc, [ nivel("Barbarian", 11) ])
+
+      post "/api/v1/accounts/sincronizar", headers: con_sesion, as: :json
+
+      cuenta = response.parsed_body["cuentas"].first
+      expect(cuenta).to include("nombre" => "Una", "ok" => true)
+      expect(cuenta["resumen"]).to include("actualizados" => 1)
+    end
+
+    it "sigue con las demas cuando la API rechaza una cuenta" do
+      buena = con_progreso("Buena", "Barbarian")
+      mala = con_progreso("Mala", "Archer")
+      responder(buena.tag_coc, [ nivel("Barbarian", 11) ])
+      stub_request(:get, %r{/players/#{CGI.escape(mala.tag_coc)}}).to_return(
+        status: 403,
+        body: { "reason" => "accessDenied.invalidIp", "message" => "IP invalida" }.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+
+      post "/api/v1/accounts/sincronizar", headers: con_sesion, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(buena.account_items.first.reload.current_level).to eq(11)
+      fallada = response.parsed_body["cuentas"].find { |c| c["nombre"] == "Mala" }
+      expect(fallada).to include("ok" => false)
+      expect(fallada["error"]).to be_present
+    end
+
+    it "no falla cuando ninguna cuenta tiene tag" do
+      create(:account, town_hall: nil)
+
+      post "/api/v1/accounts/sincronizar", headers: con_sesion, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body).to include("total" => 0, "cuentas" => [])
+    end
+  end
 end

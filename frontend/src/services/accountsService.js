@@ -60,6 +60,21 @@ export async function deleteAccount(id) {
 }
 
 /**
+ * Sincroniza de una vez todas las cuentas que tienen tag. Exige sesion.
+ *
+ * Devuelve `{ total, cuentas }`, con el detalle de cada una y no un total
+ * global: si alguna fallo porque la API rechazo el token, hace falta saber cual
+ * y por que.
+ *
+ * Tarda: es una llamada a la API oficial por cuenta.
+ */
+export async function syncAllAccounts() {
+  const { body } = await sendJson('/accounts/sincronizar', 'POST');
+
+  return body;
+}
+
+/**
  * Trae el progreso real desde la API oficial de Clash y lo aplica. Exige sesion
  * y que la cuenta tenga tag.
  *

@@ -8,7 +8,7 @@ import Modal from '../components/Modal';
 import AccountFormModal from '../components/AccountFormModal';
 import { useAccountList } from '../hooks/useAccountList';
 import { useAuth } from '../context/AuthContext';
-import { createAccount } from '../services/accountsService';
+import { createAccount, syncAllAccounts } from '../services/accountsService';
 
 export default function Dashboard() {
   // La lista ya trae el progreso de cada cuenta. Antes habia que pedir el
@@ -16,6 +16,25 @@ export default function Dashboard() {
   const { accounts, loading, error, refetch } = useAccountList();
   const { autenticado } = useAuth();
   const [creando, setCreando] = useState(false);
+  const [sincronizando, setSincronizando] = useState(false);
+  const [resultado, setResultado] = useState(null);
+
+  // Las cuentas sin tag ni se intentan: el backend las deja afuera, y decirlo
+  // antes evita que parezca que se saltearon por un error.
+  const conTag = accounts.filter((a) => a.sincronizable).length;
+
+  const sincronizarTodas = async () => {
+    setSincronizando(true);
+    setResultado(null);
+    try {
+      setResultado(await syncAllAccounts());
+      refetch();
+    } catch (err) {
+      setResultado({ error: err.message || 'No se pudo sincronizar.' });
+    } finally {
+      setSincronizando(false);
+    }
+  };
 
   const crear = async (datos) => {
     await createAccount(datos);
@@ -74,15 +93,37 @@ export default function Dashboard() {
           </p>
         </div>
         {autenticado && (
-          <button
-            type="button"
-            onClick={() => setCreando(true)}
-            className="rounded-lg bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 text-sm font-semibold whitespace-nowrap transition"
-          >
-            Nueva cuenta
-          </button>
+          <div className="flex gap-2">
+            {conTag > 0 && (
+              <button
+                type="button"
+                onClick={sincronizarTodas}
+                disabled={sincronizando}
+                title={`Traer los niveles reales de las ${conTag} cuentas con tag`}
+                className="rounded-lg border border-brand-300 text-brand-700 hover:bg-brand-50 px-4 py-2 text-sm font-semibold whitespace-nowrap disabled:opacity-60 transition"
+              >
+                {sincronizando
+                  ? 'Sincronizando…'
+                  : `Sincronizar ${conTag}`}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setCreando(true)}
+              className="rounded-lg bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 text-sm font-semibold whitespace-nowrap transition"
+            >
+              Nueva cuenta
+            </button>
+          </div>
         )}
       </section>
+
+      {resultado && (
+        <ResultadoSincronizacion
+          {...resultado}
+          onCerrar={() => setResultado(null)}
+        />
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {accounts.map((a) => (
@@ -114,6 +155,98 @@ export default function Dashboard() {
         </Modal>
       )}
     </div>
+  );
+}
+
+/**
+ * Que dejo la sincronizacion, cuenta por cuenta.
+ *
+ * No se muestra un total global a proposito: si una cuenta fallo porque la API
+ * rechazo el token, un "12 actualizados" taparia justamente eso. Las que se
+ * actualizaron se resumen en una linea; las que fallaron se listan con su
+ * motivo.
+ */
+function ResultadoSincronizacion({ total, cuentas, error, onCerrar }) {
+  if (error) {
+    return (
+      <section
+        role="alert"
+        className="mb-6 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-800 flex justify-between gap-4"
+      >
+        <span>{error}</span>
+        <button onClick={onCerrar} aria-label="Cerrar" className="shrink-0">
+          ✕
+        </button>
+      </section>
+    );
+  }
+
+  const fallaron = cuentas.filter((c) => !c.ok);
+  const cambiadas = cuentas.filter((c) => c.ok && c.resumen.actualizados > 0);
+  const actualizados = cambiadas.reduce((n, c) => n + c.resumen.actualizados, 0);
+  const ok = total - fallaron.length;
+
+  // El titulo cuenta las que se sincronizaron de verdad, no las que se
+  // intentaron: decir "sincronizadas 2" cuando las dos fallaron es mentir.
+  const titulo =
+    ok === 0
+      ? `No se pudo sincronizar ninguna de las ${total} cuentas`
+      : `Sincronizadas ${ok} de ${total} cuentas`;
+
+  const detalle =
+    ok === 0
+      ? 'Ninguna llegó a actualizarse.'
+      : actualizados === 0
+        ? 'Ya estaban al día.'
+        : `Se actualizaron ${actualizados} elementos en ${cambiadas.length} cuentas.`;
+
+  return (
+    <section className="mb-6 rounded-2xl border border-slate-100 bg-white shadow-card p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="font-semibold text-slate-900">{titulo}</h2>
+          <p className="mt-1 text-sm text-slate-500">{detalle}</p>
+        </div>
+        <button
+          onClick={onCerrar}
+          aria-label="Cerrar"
+          className="rounded-full h-8 w-8 grid place-items-center text-slate-500 hover:bg-slate-100 shrink-0"
+        >
+          ✕
+        </button>
+      </div>
+
+      {cambiadas.length > 0 && (
+        <ul className="mt-4 flex flex-wrap gap-2">
+          {cambiadas.map((c) => (
+            <li
+              key={c.id}
+              className="rounded-lg bg-slate-50 px-3 py-1.5 text-sm text-slate-700"
+            >
+              {c.nombre}{' '}
+              <span className="font-semibold tabular-nums">
+                +{c.resumen.actualizados}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {fallaron.length > 0 && (
+        <div className="mt-4 rounded-xl bg-red-50 border border-red-100 p-3">
+          <p className="text-sm font-semibold text-red-800">
+            {fallaron.length} no se pudieron sincronizar
+          </p>
+          <ul className="mt-1 space-y-0.5 text-sm text-red-700">
+            {fallaron.map((c) => (
+              <li key={c.id}>
+                <span className="font-medium">{c.nombre}</span>: {c.error}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
   );
 }
 
