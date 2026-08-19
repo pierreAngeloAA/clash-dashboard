@@ -304,45 +304,69 @@ function SearchBox({ label, placeholder, value, onChange, onSubmit }) {
 }
 
 function AccountCard({ account }) {
-  const pct = account.progresoPct;
+  const pct = account.progresoPct ?? 0;
+  const completo = pct >= 100;
 
   return (
     <Link
       to={`/user/${account.id}`}
-      className="bg-white rounded-2xl shadow-card border border-slate-100 p-4 hover:border-brand-300 hover:shadow-md transition"
+      className="group relative overflow-hidden bg-white rounded-2xl border border-slate-200/80 shadow-card hover:shadow-cardHover hover:border-brand-300 hover:-translate-y-0.5 transition-all duration-200"
     >
-      <div className="flex items-center justify-between">
-        <div className="min-w-0">
-          <p className="font-semibold text-slate-900 truncate">
-            {account.nombre}
-          </p>
-          {/* Sin tag la cuenta no se puede sincronizar con la API oficial. */}
-          <p className="text-xs text-slate-500 truncate">
-            {account.tagCoc || 'sin tag'}
-          </p>
-        </div>
-        {account.townHall != null && (
-          <div className="text-right">
-            <p className="text-xs text-slate-500">TH</p>
-            <p className="font-bold text-brand-700">{account.townHall}</p>
-          </div>
-        )}
-      </div>
+      {/* El ayuntamiento tiñe apenas la cabecera: da un ancla visual sin
+          agregar otro numero que leer. */}
+      <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-brand-50/70 to-transparent" />
 
-      <div className="mt-3">
-        <div className="flex justify-between text-xs text-slate-500 mb-1">
-          <span>Progreso</span>
-          <span className="font-medium text-slate-700">
-            {pct == null ? 's/d' : `${pct.toFixed(1)}%`}
-          </span>
+      <div className="relative p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="font-bold text-slate-900 truncate leading-tight">
+              {account.nombre}
+            </p>
+            {/* Sin tag la cuenta no se puede sincronizar con la API oficial. */}
+            {account.tagCoc ? (
+              <p className="mt-0.5 text-xs text-slate-400 font-mono truncate">
+                {account.tagCoc}
+              </p>
+            ) : (
+              <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+                sin tag
+              </span>
+            )}
+          </div>
+
+          {account.townHall != null && (
+            <div className="shrink-0 grid place-items-center h-11 w-11 rounded-xl bg-brand-600 text-white shadow-sm">
+              <span className="text-[9px] font-semibold leading-none opacity-70">
+                TH
+              </span>
+              <span className="text-base font-bold leading-none tabular-nums">
+                {account.townHall}
+              </span>
+            </div>
+          )}
         </div>
-        <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-          {pct != null && (
+
+        <div className="mt-4">
+          <div className="flex items-baseline justify-between mb-1.5">
+            <span className="text-xs text-slate-500">Progreso</span>
+            <span
+              className={`text-lg font-bold tabular-nums leading-none ${
+                completo ? 'text-emerald-600' : 'text-slate-900'
+              }`}
+            >
+              {pct.toFixed(1)}
+              <span className="text-xs font-medium text-slate-400">%</span>
+            </span>
+          </div>
+          {/* Marca fina con la punta redondeada, anclada a la izquierda. */}
+          <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
             <div
-              className="h-full bg-brand-500 transition-all"
+              className={`h-full rounded-full transition-all duration-500 ${
+                completo ? 'bg-emerald-500' : 'bg-brand-500'
+              }`}
               style={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
             />
-          )}
+          </div>
         </div>
       </div>
     </Link>
