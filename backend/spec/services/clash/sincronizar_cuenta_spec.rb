@@ -231,4 +231,88 @@ RSpec.describe Clash::SincronizarCuenta do
       expect(poder.reload.current_level).to eq(18)
     end
   end
+
+  # El Sheet dejo congelado el ayuntamiento del momento de la importacion, y ese
+  # numero decide que elementos existen en el inventario.
+  describe "el ayuntamiento" do
+    it "lo pone al dia con lo que dice la API" do
+      cuenta.update!(town_hall: 13)
+      cliente = cliente_que_responde(jugador_con.merge("townHallLevel" => 15))
+
+      described_class.new(cuenta, cliente: cliente).call
+
+      expect(cuenta.reload.town_hall).to eq(15)
+    end
+
+    it "avisa en el informe que cambio" do
+      cuenta.update!(town_hall: 13)
+      cliente = cliente_que_responde(jugador_con.merge("townHallLevel" => 15))
+
+      informe = described_class.new(cuenta, cliente: cliente).call
+
+      expect(informe.ayuntamiento).to eq({ antes: 13, ahora: 15 })
+    end
+
+    it "no informa nada cuando el ayuntamiento no cambio" do
+      cuenta.update!(town_hall: 15)
+      cliente = cliente_que_responde(jugador_con.merge("townHallLevel" => 15))
+
+      informe = described_class.new(cuenta, cliente: cliente).call
+
+      expect(informe.ayuntamiento).to be_nil
+      expect(informe.resumen[:elementosNuevos]).to eq(0)
+    end
+
+    it "guarda tambien el taller del constructor" do
+      cuenta.update!(builder_hall: 8)
+      cliente = cliente_que_responde(
+        jugador_con.merge("townHallLevel" => 15, "builderHallLevel" => 10)
+      )
+
+      described_class.new(cuenta, cliente: cliente).call
+
+      expect(cuenta.reload.builder_hall).to eq(10)
+    end
+
+    it "no toca el ayuntamiento si la API no lo dice" do
+      cuenta.update!(town_hall: 13)
+      cliente = cliente_que_responde(jugador_con)
+
+      described_class.new(cuenta, cliente: cliente).call
+
+      expect(cuenta.reload.town_hall).to eq(13)
+    end
+
+    it "repuebla el inventario con lo que el ayuntamiento nuevo habilita" do
+      cuenta.update!(town_hall: 9)
+      create(:game_item, categoria: "TROPAS CLARAS", nombre: "Yeti",
+        nombre_api: "Yeti", max_level: 5, desbloquea_en_th: 12)
+      cliente = cliente_que_responde(jugador_con.merge("townHallLevel" => 14))
+
+      informe = described_class.new(cuenta, cliente: cliente).call
+
+      expect(informe.resumen[:elementosNuevos]).to be_positive
+      expect(cuenta.account_items.joins(:game_item).where(game_items: { nombre: "Yeti" }))
+        .to be_present
+    end
+
+    # El orden importa: si primero se aplicaran los niveles y despues se
+    # repoblara, los elementos recien habilitados quedarian en cero hasta la
+    # sincronizacion siguiente.
+    it "le da su nivel real a los elementos que acaba de habilitar" do
+      cuenta.update!(town_hall: 9)
+      create(:game_item, categoria: "TROPAS CLARAS", nombre: "Yeti",
+        nombre_api: "Yeti", max_level: 5, desbloquea_en_th: 12)
+      cliente = cliente_que_responde(
+        jugador_con({ "name" => "Yeti", "level" => 4, "maxLevel" => 5 })
+          .merge("townHallLevel" => 14)
+      )
+
+      described_class.new(cuenta, cliente: cliente).call
+
+      yeti = cuenta.account_items.joins(:game_item).find_by(game_items: { nombre: "Yeti" })
+      expect(yeti.current_level).to eq(4)
+      expect(yeti.fuente).to eq("api")
+    end
+  end
 end
