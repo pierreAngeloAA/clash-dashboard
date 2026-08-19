@@ -253,6 +253,8 @@ function ResultadoSincronizacion({ resumen, error, onCerrar }) {
     );
   }
 
+  const subioDeTh = resumen.ayuntamiento != null;
+
   const filas = [
     ['Actualizados', resumen.actualizados],
     ['Ya estaban al día', resumen.sinCambios],
@@ -283,6 +285,16 @@ function ResultadoSincronizacion({ resumen, error, onCerrar }) {
           ✕
         </button>
       </div>
+
+      {subioDeTh && (
+        <p className="mt-3 rounded-lg bg-amber-50 border border-amber-100 px-3 py-2 text-sm text-amber-800">
+          El ayuntamiento pasó de {resumen.ayuntamiento.antes} a{' '}
+          {resumen.ayuntamiento.ahora}, así que se agregaron{' '}
+          {resumen.elementosNuevos} elementos al inventario. El porcentaje baja
+          porque ahora se mide contra todo lo que la cuenta puede tener: no se
+          perdió progreso.
+        </p>
+      )}
 
       <dl className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
         {filas.map(([etiqueta, valor]) => (

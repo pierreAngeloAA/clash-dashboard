@@ -24,6 +24,7 @@ module Clash
     Informe = Struct.new(
       :actualizados, :sin_cambios, :protegidos, :sin_mapear,
       :no_encontrados, :desconocidos, :rechazados,
+      :ayuntamiento, :elementos_nuevos,
       keyword_init: true
     ) do
       def resumen
@@ -34,7 +35,10 @@ module Clash
           sinMapear: sin_mapear.size,
           noEncontrados: no_encontrados.size,
           desconocidos: desconocidos.size,
-          rechazados: rechazados.size
+          rechazados: rechazados.size,
+          # Solo cuando el ayuntamiento cambio: { antes:, ahora: }.
+          ayuntamiento: ayuntamiento,
+          elementosNuevos: elementos_nuevos.to_i
         }
       end
     end
@@ -53,8 +57,15 @@ module Clash
     def call
       raise SinTag unless account.sincronizable?
 
-      indice = indexar(cliente.jugador(account.tag_coc))
+      jugador = cliente.jugador(account.tag_coc)
+      indice = indexar(jugador)
       informe = informe_vacio
+
+      # Antes de mirar los niveles, se pone al dia el ayuntamiento. El orden
+      # importa: si la cuenta subio de ayuntamiento, repoblar primero hace que
+      # los elementos recien habilitados entren en esta misma pasada y reciban
+      # su nivel real, en vez de quedar en cero hasta la proxima.
+      actualizar_ayuntamiento(jugador, informe)
 
       account.account_items.includes(:game_item).find_each do |item|
         clasificar(item, indice, informe)
@@ -69,6 +80,35 @@ module Clash
     private
 
     attr_reader :account, :cliente
+
+    # El Sheet dejo congelado el ayuntamiento del momento de la importacion, y
+    # ese numero decide que elementos existen en el inventario y cual es su
+    # tope. Una cuenta que subio de TH y sigue figurando en el viejo tiene menos
+    # elementos de los que le corresponden, asi que su porcentaje de progreso se
+    # calcula sobre un total mas chico y queda inflado.
+    #
+    # Al repoblar, ese porcentaje **baja**. No se perdio progreso: aparece el
+    # numero real.
+    def actualizar_ayuntamiento(jugador, informe)
+      nivel = jugador["townHallLevel"].to_i
+      constructor = jugador["builderHallLevel"]
+      anterior = account.town_hall
+
+      cambios = {}
+      cambios[:town_hall] = nivel if nivel.positive? && nivel != anterior
+      # El taller del constructor no habilita nada del inventario que se sigue
+      # aca, pero se guarda igual porque es un dato de la cuenta que la API sabe.
+      cambios[:builder_hall] = constructor if constructor.present? &&
+        constructor != account.builder_hall
+
+      return if cambios.empty?
+
+      account.update!(cambios)
+      return unless cambios.key?(:town_hall)
+
+      informe.ayuntamiento = { antes: anterior, ahora: nivel }
+      informe.elementos_nuevos = account.poblar_inventario
+    end
 
     def clasificar(item, indice, informe)
       return informe.protegidos << item if item.bloqueado?
@@ -121,7 +161,8 @@ module Clash
     def informe_vacio
       Informe.new(
         actualizados: [], sin_cambios: [], protegidos: [], sin_mapear: [],
-        no_encontrados: [], desconocidos: [], rechazados: []
+        no_encontrados: [], desconocidos: [], rechazados: [],
+        ayuntamiento: nil, elementos_nuevos: 0
       )
     end
   end

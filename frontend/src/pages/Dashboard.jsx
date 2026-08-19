@@ -183,6 +183,9 @@ function ResultadoSincronizacion({ total, cuentas, error, onCerrar }) {
 
   const fallaron = cuentas.filter((c) => !c.ok);
   const cambiadas = cuentas.filter((c) => c.ok && c.resumen.actualizados > 0);
+  // Subir de ayuntamiento agrega elementos y hace bajar el porcentaje. Sin
+  // decirlo, parece que la cuenta retrocedio.
+  const subieron = cuentas.filter((c) => c.ok && c.resumen.ayuntamiento);
   const actualizados = cambiadas.reduce((n, c) => n + c.resumen.actualizados, 0);
   const ok = total - fallaron.length;
 
@@ -230,6 +233,29 @@ function ResultadoSincronizacion({ total, cuentas, error, onCerrar }) {
             </li>
           ))}
         </ul>
+      )}
+
+      {subieron.length > 0 && (
+        <div className="mt-4 rounded-xl bg-amber-50 border border-amber-100 p-3">
+          <p className="text-sm font-semibold text-amber-900">
+            {subieron.length === 1
+              ? 'Una cuenta subió de ayuntamiento'
+              : `${subieron.length} cuentas subieron de ayuntamiento`}
+          </p>
+          <ul className="mt-1 space-y-0.5 text-sm text-amber-800">
+            {subieron.map((c) => (
+              <li key={c.id}>
+                <span className="font-medium">{c.nombre}</span>: TH
+                {c.resumen.ayuntamiento.antes} → TH{c.resumen.ayuntamiento.ahora}
+                , +{c.resumen.elementosNuevos} elementos
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-amber-700">
+            Su porcentaje baja porque ahora se mide contra todo lo que pueden
+            tener. No se perdió progreso.
+          </p>
+        </div>
       )}
 
       {fallaron.length > 0 && (
