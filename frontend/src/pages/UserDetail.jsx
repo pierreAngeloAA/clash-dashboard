@@ -74,7 +74,7 @@ export default function UserDetail() {
   const { nombre, townHall } = account;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fadeIn">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="mb-4 flex items-center justify-between gap-3">
         <Link to="/" className="btn-ghost">
           ← Volver
@@ -112,26 +112,23 @@ export default function UserDetail() {
         )}
       </div>
 
-      <section className="bg-gradient-to-br from-brand-600 to-brand-800 text-white rounded-2xl p-6 sm:p-8 shadow-card">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-          <div className="h-20 w-20 rounded-2xl bg-white/15 backdrop-blur grid place-items-center text-3xl font-bold">
+      <section className="bg-gradient-to-br from-brand-600 to-brand-800 text-white rounded-xl px-5 py-4 shadow-card">
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 shrink-0 rounded-lg bg-white/15 backdrop-blur grid place-items-center text-lg font-bold">
             {initialsOf(nombre)}
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold truncate">{nombre}</h1>
-            {townHall != null && (
-              <p className="mt-1 text-brand-100 text-sm">Town Hall {townHall}</p>
-            )}
+            <h1 className="text-xl font-bold truncate leading-tight">{nombre}</h1>
+            <p className="text-brand-100 text-xs">
+              {townHall != null && `Town Hall ${townHall}`}
+              {account.tagCoc && ` · ${account.tagCoc}`}
+            </p>
           </div>
           {report?.progresoPct != null && (
-            <div className="text-right">
-              <p className="text-xs uppercase tracking-wider text-brand-100">
-                Progreso
-              </p>
-              <p className="text-3xl font-bold">
-                {report.progresoPct.toFixed(1)}%
-              </p>
-            </div>
+            <p className="text-2xl font-bold tabular-nums shrink-0">
+              {report.progresoPct.toFixed(1)}
+              <span className="text-sm font-medium text-brand-100">%</span>
+            </p>
           )}
         </div>
       </section>
@@ -180,11 +177,11 @@ export default function UserDetail() {
       {report?.hasReport && (
         <>
           {report.categories.length > 0 && (
-            <section className="mt-6 bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
-              <h2 className="px-5 py-4 border-b border-slate-100 font-semibold text-slate-900">
+            <section className="mt-4 bg-white rounded-xl shadow-card border border-slate-100 overflow-hidden">
+              <h2 className="px-4 py-2.5 border-b border-slate-100 font-semibold text-sm text-slate-900">
                 Categorías
               </h2>
-              <ul className="divide-y divide-slate-100">
+              <ul className="grid sm:grid-cols-2">
                 {report.categories.map((c) => (
                   <CategoryRow
                     key={c.label}
@@ -197,8 +194,8 @@ export default function UserDetail() {
           )}
 
           {Object.keys(report.totals).length > 0 && (
-            <section className="mt-6 bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
-              <h2 className="px-5 py-4 border-b border-slate-100 font-semibold text-slate-900">
+            <section className="mt-4 bg-white rounded-xl shadow-card border border-slate-100 overflow-hidden">
+              <h2 className="px-4 py-2.5 border-b border-slate-100 font-semibold text-sm text-slate-900">
                 Totales
               </h2>
               <dl className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-slate-100">
@@ -207,11 +204,11 @@ export default function UserDetail() {
                   if (!t) return null;
                   const done = t.total - t.faltante;
                   return (
-                    <div key={key} className="px-5 py-4 text-center">
-                      <dt className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <div key={key} className="px-3 py-2.5 text-center">
+                      <dt className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                         {label}
                       </dt>
-                      <dd className="mt-1 text-lg font-bold text-slate-900">
+                      <dd className="mt-0.5 text-base font-bold text-slate-900">
                         {done} / {t.total}
                       </dd>
                       <p className="text-xs text-slate-500">
@@ -381,7 +378,7 @@ function CategoryRow({ category, onClick }) {
       <button
         type="button"
         onClick={onClick}
-        className="group w-full text-left px-5 py-3 hover:bg-slate-50 transition focus:outline-none focus-visible:bg-slate-50"
+        className="group w-full h-full text-left px-4 py-2.5 border-b border-slate-100 hover:bg-slate-50 transition focus:outline-none focus-visible:bg-slate-50"
       >
         <div className="flex items-center gap-4">
           <div className="min-w-0 flex-1">
