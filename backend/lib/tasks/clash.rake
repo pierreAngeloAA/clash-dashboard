@@ -1,21 +1,27 @@
 namespace :clash do
   desc "Sincroniza el progreso de una cuenta con la API oficial. Sin tag, las hace todas"
   task :sincronizar, [ :tag ] => :environment do |_t, args|
-    cuentas = if args[:tag].present?
-      [ Account.find_by!(tag_coc: Clash::Cliente.normalizar_tag(args[:tag])) ]
+    resultados = if args[:tag].present?
+      cuenta = Account.find_by!(tag_coc: Clash::Cliente.normalizar_tag(args[:tag]))
+      [ Clash::SincronizarTodas::Resultado.new(
+          account: cuenta, informe: Clash::SincronizarCuenta.new(cuenta).call) ]
     else
-      Account.sincronizables.ordenadas.to_a
+      Clash::SincronizarTodas.new.call
     end
 
-    if cuentas.empty?
+    if resultados.empty?
       abort "Ninguna cuenta tiene tag de Clash cargado, asi que no hay nada que sincronizar."
     end
 
-    cuentas.each do |cuenta|
-      informe = Clash::SincronizarCuenta.new(cuenta).call
+    resultados.each do |resultado|
+      cuenta = resultado.account
+      puts "#{cuenta.nombre} (#{cuenta.tag_coc})"
+
+      next puts "  no se pudo: #{resultado.error}" unless resultado.ok?
+
+      informe = resultado.informe
       r = informe.resumen
 
-      puts "#{cuenta.nombre} (#{cuenta.tag_coc})"
       puts "  actualizados: #{r[:actualizados]}   sin cambios: #{r[:sinCambios]}"
       puts "  protegidos:   #{r[:protegidos]} (con candado)"
       puts "  sin mapear:   #{r[:sinMapear]} (defensas, trampas y lo que no tiene nombre_api)"
@@ -29,8 +35,6 @@ namespace :clash do
       if informe.desconocidos.any?
         puts "  la API trajo #{informe.desconocidos.size} elementos que el catalogo no conoce"
       end
-    rescue Clash::Cliente::Error, Clash::SincronizarCuenta::SinTag => e
-      puts "#{cuenta.nombre}: #{e.message}"
     end
   end
 

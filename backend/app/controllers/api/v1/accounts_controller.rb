@@ -6,7 +6,7 @@ module Api
     # leia el Google Sheet compartido. Escribir si, porque es lo que reemplaza a
     # editar la planilla a mano.
     class AccountsController < ApplicationController
-      before_action :autenticar!, only: %i[create update destroy sincronizar]
+      before_action :autenticar!, only: %i[create update destroy sincronizar sincronizar_todas]
       before_action :cargar_cuenta, only: %i[show update destroy sincronizar]
 
       # La API de Clash puede estar caida, sin token o rechazando la IP. Nada de
@@ -71,6 +71,24 @@ module Api
         }
       end
 
+      # Sincroniza de una vez todas las cuentas que tienen tag.
+      #
+      # Devuelve el detalle por cuenta, no un total: si una fallo porque la API
+      # rechazo el token, hace falta saber cual y por que. Un numero global
+      # taparia justamente el caso que importa.
+      #
+      # Las cuentas que fallan no frenan a las demas, y por eso la respuesta es
+      # 200 aunque alguna no se haya podido sincronizar: la operacion se hizo, y
+      # lo que paso con cada una esta en el cuerpo.
+      def sincronizar_todas
+        resultados = Clash::SincronizarTodas.new.call
+
+        render json: {
+          total: resultados.size,
+          cuentas: resultados.map { |r| resumen_de(r) }
+        }
+      end
+
       # Se lleva puesto el progreso de la cuenta (`dependent: :destroy`), no solo
       # la fila.
       def destroy
@@ -80,6 +98,18 @@ module Api
       end
 
       private
+
+      def resumen_de(resultado)
+        base = {
+          id: resultado.account.id,
+          nombre: resultado.account.nombre,
+          ok: resultado.ok?
+        }
+
+        return base.merge(error: resultado.error) unless resultado.ok?
+
+        base.merge(resumen: resultado.informe.resumen)
+      end
 
       def cargar_cuenta
         @cuenta = Account.find(params[:id])

@@ -31,9 +31,11 @@ Rails.application.routes.draw do
 
       # Lectura publica del progreso; escribir exige sesion.
       resources :accounts, only: %i[index show create update destroy] do
-        # Trae el progreso real desde la API oficial. Es POST y no GET porque
-        # modifica la cuenta.
+        # Traen el progreso real desde la API oficial. Son POST y no GET porque
+        # modifican las cuentas.
         post :sincronizar, on: :member
+        # Sobre la coleccion: sincroniza de una vez todas las que tienen tag.
+        post :sincronizar, on: :collection, action: :sincronizar_todas
         # Anidado porque un elemento no significa nada fuera de su cuenta, y asi
         # el controlador lo busca siempre dentro de ella.
         resources :items, only: :update, controller: "account_items"

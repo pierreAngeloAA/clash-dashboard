@@ -5,6 +5,7 @@ import {
   fetchAccount,
   fetchAccountList,
   syncAccount,
+  syncAllAccounts,
   updateAccount,
   updateAccountItem,
 } from './accountsService';
@@ -155,6 +156,31 @@ describe('cliente de las cuentas', () => {
       );
 
       await expect(syncAccount(5)).rejects.toThrow(/Invalid authorization/);
+    });
+  });
+
+  describe('syncAllAccounts', () => {
+    it('dispara la sincronizacion de todas', async () => {
+      responder({ total: 3, cuentas: [] });
+
+      await syncAllAccounts();
+
+      expect(urlLlamada()).toBe('/api/v1/accounts/sincronizar');
+      expect(opcionesDelFetch().method).toBe('POST');
+    });
+
+    // El detalle por cuenta es el punto: un total global taparia que una fallo.
+    it('devuelve el detalle de cada cuenta', async () => {
+      const respuesta = {
+        total: 2,
+        cuentas: [
+          { id: 1, nombre: 'FATA', ok: true, resumen: { actualizados: 12 } },
+          { id: 2, nombre: 'ALEX', ok: false, error: 'IP invalida' },
+        ],
+      };
+      responder(respuesta);
+
+      await expect(syncAllAccounts()).resolves.toEqual(respuesta);
     });
   });
 
