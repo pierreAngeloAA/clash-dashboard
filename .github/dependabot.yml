@@ -1,0 +1,36 @@
+# Weekly dependency updates, grouped so each ecosystem opens at most one PR.
+# PRs target `staging`; `main` is only updated by the owner.
+version: 2
+updates:
+  - package-ecosystem: bundler
+    directory: /backend
+    target-branch: staging
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      backend:
+        patterns: ["*"]
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: npm
+    directory: /frontend
+    target-branch: staging
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      frontend:
+        patterns: ["*"]
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: staging
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
