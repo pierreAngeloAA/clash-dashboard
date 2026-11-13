@@ -24,7 +24,7 @@ gem "rack-cors"
 
 # Autenticacion: Devise emite el JWT y devise-jwt lo revoca contra una denylist
 gem "devise"
-gem "devise-jwt", "~> 0.12.1"
+gem "devise-jwt", "~> 0.13.0"
 
 # El importador del Google Sheet lee el htmlview, que es HTML crudo
 gem "nokogiri"
