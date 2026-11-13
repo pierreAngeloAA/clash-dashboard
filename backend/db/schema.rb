@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_13_180001) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_13_145023) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -48,6 +48,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_13_180001) do
     t.string "tag_coc"
     t.integer "town_hall"
     t.datetime "updated_at", null: false
+    t.integer "trophies"
+    t.integer "best_trophies"
+    t.integer "war_stars"
+    t.integer "exp_level"
+    t.integer "donations"
+    t.integer "donations_received"
+    t.string "clan_name"
+    t.string "clan_tag"
+    t.string "clan_role"
+    t.string "clan_badge_url"
     t.index ["gid_origen"], name: "index_accounts_on_gid_origen", unique: true
     t.index ["nombre"], name: "index_accounts_on_nombre", unique: true
     t.index ["orden"], name: "index_accounts_on_orden"

@@ -28,7 +28,9 @@ class AccountSerializer
       tagCoc: account.tag_coc,
       orden: account.orden,
       sincronizable: account.sincronizable?,
-      progresoPct: progreso_pct
+      progresoPct: progreso_pct,
+      stats: stats,
+      clan: clan
     }
   end
 
@@ -49,6 +51,25 @@ class AccountSerializer
   private
 
   attr_reader :account, :progreso_pct
+
+  # Player stats synced from the official API. Values are nil until the account
+  # is synced for the first time.
+  def stats
+    {
+      trophies: account.trophies,
+      bestTrophies: account.best_trophies,
+      warStars: account.war_stars,
+      expLevel: account.exp_level,
+      donations: account.donations,
+      donationsReceived: account.donations_received
+    }
+  end
+
+  def clan
+    return nil if account.clan_tag.blank?
+
+    { name: account.clan_name, tag: account.clan_tag, role: account.clan_role, badgeUrl: account.clan_badge_url }
+  end
 
   # Account#secciones ya devuelve las categorias en el orden del Sheet y precarga
   # los niveles del catalogo, asi que serializar aca no dispara consultas extra.
