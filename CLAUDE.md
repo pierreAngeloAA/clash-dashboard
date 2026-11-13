@@ -2,8 +2,9 @@
 
 Guía para Claude Code (claude.ai/code) al trabajar en este repositorio.
 
-El código, los comentarios y los mensajes de commit están **en español**. Seguir
-esa convención, incluidos los mensajes de error que ve el usuario final.
+The existing code, comments and older commits are in Spanish. **New code,
+comments, commit messages and PRs are written in English** (since Nov 2026);
+existing Spanish code is not translated just for the sake of it.
 
 ## Qué es
 
@@ -27,9 +28,9 @@ Todo corre en Docker. El stack levanta con `docker compose up`.
 
 ```bash
 docker compose up -d --build            # levantar todo
-docker compose exec frontend npm test   # Vitest  (26 ejemplos)
+docker compose exec frontend npm test   # Vitest  (42 examples)
 docker compose exec frontend npm run build
-docker compose exec -e RAILS_ENV=test backend bundle exec rspec   # 221 ejemplos
+docker compose exec -e RAILS_ENV=test backend bundle exec rspec   # 272 examples
 docker compose exec backend ./bin/rails sheet:importar            # importar el Sheet
 ```
 
@@ -128,16 +129,18 @@ Devise + `devise-jwt`, con revocación por JTIMatcher: al cerrar sesión se rota
   https://developer.clashofclans.com/. La IP pública se ve con
   `curl -s https://api.ipify.org`. Sin token, `Clash::Cliente` degrada a 503 con
   un mensaje explicándolo; el resto de la app funciona igual.
-- **El nodo del host es viejo.** `npm test` fuera de Docker falla con
-  `webidl.util.markAsUncloneable is not a function`: Vite 8 y jsdom piden Node 22
-  y el host tiene 20. Correr los tests dentro del contenedor.
+- **Node 22 is required.** Vite 8, Vitest 5 and jsdom 31 fail on Node 20
+  (`webidl.util.markAsUncloneable is not a function`). Outside Docker run
+  `nvm use 22` first.
+- **CI Ruby jobs are pinned to `ubuntu-24.04`**: `ubuntu-latest` (26.04) has no
+  prebuilt Ruby 3.3.5 for `ruby/setup-ruby`.
 
 ## Estado
 
-- Ramas: se trabaja en `staging` y se mergea a `main` por PR. El CI corre tests
-  y build de las dos puntas más Brakeman.
-- **Producción**: hay un despliegue viejo en Render que sirve la versión anterior
-  a la base de datos (Express + lectura del Sheet desde el navegador). Migrarlo
-  al stack actual es el issue #7.
+- Branches: one branch per task → PR into `staging`. `main` is only updated by
+  the owner. CI runs tests and build for both ends plus RuboCop, Brakeman,
+  bundler-audit and npm audit.
+- **Production**: the current stack runs on Render
+  (https://clash-progreso-web.onrender.com), defined in `render.yaml`.
 - Las tareas pendientes viven en los issues de GitHub y en el tablero
   https://github.com/users/pierreAngeloAA/projects/1

@@ -11,6 +11,17 @@ PostgreSQL**: el Sheet se importó una vez y no se vuelve a mirar.
 | `frontend/` | React + Vite + Tailwind      | 5173   | [README](frontend/README.md) |
 | `backend/`  | API en Rails 8 + PostgreSQL  | 3000   | Devise + JWT, `/api/v1/*` |
 
+
+## Demo
+
+**Live:** <https://clash-progreso-web.onrender.com> (free Render tier: the first request can take ~1 minute while the API wakes up).
+
+| Dashboard | Account detail |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard.webp) | ![Account detail](docs/screenshots/account-detail.webp) |
+
+<img src="docs/screenshots/dashboard-mobile.webp" alt="Dashboard on mobile" width="260">
+
 ## Cómo está armado
 
 El navegador habla **solo con Rails**. Rails habla con PostgreSQL y con la API
