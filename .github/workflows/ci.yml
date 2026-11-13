@@ -8,7 +8,7 @@ on:
 jobs:
   backend:
     name: Backend — tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # ubuntu-latest (26.04) has no prebuilt Ruby 3.3.5
 
     defaults:
       run:
@@ -54,7 +54,7 @@ jobs:
 
   backend_calidad:
     name: Backend — estilo y seguridad
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # ubuntu-latest (26.04) has no prebuilt Ruby 3.3.5
 
     defaults:
       run:
