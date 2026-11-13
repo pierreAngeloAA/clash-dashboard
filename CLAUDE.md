@@ -67,6 +67,11 @@ cada cuenta (`AccountItem`, con subclases por sección: `Heroe`, `Defensa`,
 `TropaClara`…). `Account#poblar_inventario` genera los elementos que habilita el
 ayuntamiento de la cuenta; subir de ayuntamiento vuelve a poblarlo.
 
+**Snapshots are the exception.** Every sync upserts one `AccountSnapshot` per
+account and day (progress %, TH, trophies, war stars, donations), served by
+`GET /api/v1/accounts/:id/history` (last year). They store what the inventory
+can't reconstruct later: how the account got here.
+
 **El report no se guarda.** `ReportCalculator` lo recalcula a demanda desde el
 progreso: almacenarlo obligaría a recalcular en cada edición y un solo olvido
 dejaría la base mintiendo.

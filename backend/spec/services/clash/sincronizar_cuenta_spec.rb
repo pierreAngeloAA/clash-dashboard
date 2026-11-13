@@ -368,4 +368,13 @@ RSpec.describe Clash::SincronizarCuenta do
       expect(cuenta.reload).to have_attributes(trophies: 4000, war_stars: 900)
     end
   end
+
+  describe "history" do
+    it "records a snapshot of the account after syncing" do
+      expect { described_class.new(cuenta, cliente: cliente_que_responde({ "townHallLevel" => 15, "trophies" => 4321 })).call }
+        .to change { cuenta.snapshots.count }.by(1)
+
+      expect(cuenta.snapshots.last).to have_attributes(taken_on: Date.current, trophies: 4321, town_hall: 15)
+    end
+  end
 end

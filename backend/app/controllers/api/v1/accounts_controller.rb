@@ -7,7 +7,7 @@ module Api
     # editar la planilla a mano.
     class AccountsController < ApplicationController
       before_action :autenticar!, only: %i[create update destroy sincronizar sincronizar_todas]
-      before_action :cargar_cuenta, only: %i[show update destroy sincronizar]
+      before_action :cargar_cuenta, only: %i[show update destroy sincronizar history]
 
       # La API de Clash puede estar caida, sin token o rechazando la IP. Nada de
       # eso es culpa de quien aprieta el boton, asi que se traduce a un mensaje
@@ -35,6 +35,12 @@ module Api
 
       def show
         render json: AccountSerializer.new(@cuenta).completo
+      end
+
+      # Public, like the rest of the reads: one point per synced day over the
+      # last year.
+      def history
+        render json: { snapshots: @cuenta.snapshots.recent.map(&:as_history_json) }
       end
 
       # Al crear la cuenta, Account#poblar_inventario le genera los elementos que

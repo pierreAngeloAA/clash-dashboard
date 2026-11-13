@@ -325,4 +325,34 @@ RSpec.describe "Api::V1::Accounts" do
       expect(consultas_del_detalle).to eq(con_dos)
     end
   end
+
+  describe "GET /api/v1/accounts/:id/history" do
+    it "returns the snapshots oldest first, without a session" do
+      create(:account_snapshot, account: cuenta, taken_on: Date.new(2026, 11, 2), progress_pct: 81.25, trophies: 5000)
+      create(:account_snapshot, account: cuenta, taken_on: Date.new(2026, 11, 1), progress_pct: 80.0, trophies: 4900)
+
+      get "/api/v1/accounts/#{cuenta.id}/history"
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["snapshots"]).to eq([
+        { "date" => "2026-11-01", "progressPct" => 80.0, "townHall" => nil, "trophies" => 4900, "warStars" => nil, "donations" => nil },
+        { "date" => "2026-11-02", "progressPct" => 81.25, "townHall" => nil, "trophies" => 5000, "warStars" => nil, "donations" => nil }
+      ])
+    end
+
+    it "only includes the last year" do
+      create(:account_snapshot, account: cuenta, taken_on: 400.days.ago.to_date)
+      create(:account_snapshot, account: cuenta, taken_on: Date.current)
+
+      get "/api/v1/accounts/#{cuenta.id}/history"
+
+      expect(response.parsed_body["snapshots"].size).to eq(1)
+    end
+
+    it "responds 404 for an unknown account" do
+      get "/api/v1/accounts/0/history"
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
 end
