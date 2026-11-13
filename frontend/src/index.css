@@ -1,6 +1,76 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: Inter, system-ui, -apple-system, sans-serif;
+
+  --color-brand-50: #eef4ff;
+  --color-brand-100: #dbe6ff;
+  --color-brand-200: #bfd1ff;
+  --color-brand-300: #93b1ff;
+  --color-brand-400: #6086ff;
+  --color-brand-500: #3b5fff;
+  --color-brand-600: #2540f5;
+  --color-brand-700: #1d31d8;
+  --color-brand-800: #1c2bae;
+  --color-brand-900: #1d2a89;
+
+  --shadow-card:
+    0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.06);
+  --shadow-cardHover: 0 8px 28px rgba(15, 23, 42, 0.12);
+  --shadow-tarjeta:
+    0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 10px rgba(15, 23, 42, 0.08),
+    0 12px 28px rgba(15, 23, 42, 0.1);
+  --shadow-tarjetaHover:
+    0 2px 4px rgba(15, 23, 42, 0.08), 0 10px 20px rgba(15, 23, 42, 0.12),
+    0 24px 48px rgba(29, 42, 137, 0.18);
+
+  --animate-fadeIn: fadeIn 0.25s ease-out both;
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility input-base {
+  @apply w-full px-4 py-2.5 text-sm rounded-lg border border-slate-200 bg-white
+           placeholder:text-slate-400 focus:outline-hidden focus:ring-2
+           focus:ring-brand-500/30 focus:border-brand-500 transition;
+}
+
+@utility btn-ghost {
+  @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
+           text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition;
+}
+
+@utility chip {
+  @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs
+           font-medium bg-slate-100 text-slate-700;
+}
 
 @layer base {
   html {
@@ -21,22 +91,6 @@
     background: rgba(248, 250, 252, 0.78);
     z-index: -1;
     pointer-events: none;
-  }
-}
-
-@layer components {
-  .input-base {
-    @apply w-full px-4 py-2.5 text-sm rounded-lg border border-slate-200 bg-white
-           placeholder:text-slate-400 focus:outline-none focus:ring-2
-           focus:ring-brand-500/30 focus:border-brand-500 transition;
-  }
-  .btn-ghost {
-    @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
-           text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition;
-  }
-  .chip {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs
-           font-medium bg-slate-100 text-slate-700;
   }
 }
 

@@ -136,7 +136,7 @@ function ItemRow({ item, onEditar }) {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') e.target.blur();
               }}
-              className="w-12 rounded-md border border-slate-200 bg-white/80 px-1.5 py-0.5 text-sm text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-400 disabled:opacity-50"
+              className="w-12 rounded-md border border-slate-200 bg-white/80 px-1.5 py-0.5 text-sm text-right tabular-nums focus:outline-hidden focus:ring-2 focus:ring-brand-500/40 focus:border-brand-400 disabled:opacity-50"
             />
             <span className="text-xs text-slate-400 tabular-nums w-6">
               /{item.maxLevel}
@@ -150,7 +150,7 @@ function ItemRow({ item, onEditar }) {
                   ? 'Desbloquear: la sincronizacion vuelve a poder pisarlo'
                   : 'Bloquear: la sincronizacion no lo va a pisar'
               }
-              className="rounded px-1 text-xs opacity-60 hover:opacity-100 disabled:opacity-30 transition"
+              className="rounded-sm px-1 text-xs opacity-60 hover:opacity-100 disabled:opacity-30 transition"
             >
               {item.bloqueado ? '🔒' : '🔓'}
             </button>

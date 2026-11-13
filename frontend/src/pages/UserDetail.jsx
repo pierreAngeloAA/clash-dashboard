@@ -112,9 +112,9 @@ export default function UserDetail() {
         )}
       </div>
 
-      <section className="bg-gradient-to-br from-brand-600 to-brand-800 text-white rounded-xl px-5 py-4 shadow-card">
+      <section className="bg-linear-to-br from-brand-600 to-brand-800 text-white rounded-xl px-5 py-4 shadow-card">
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 shrink-0 rounded-lg bg-white/15 backdrop-blur grid place-items-center text-lg font-bold">
+          <div className="h-12 w-12 shrink-0 rounded-lg bg-white/15 backdrop-blur-sm grid place-items-center text-lg font-bold">
             {initialsOf(nombre)}
           </div>
           <div className="flex-1 min-w-0">
@@ -378,7 +378,7 @@ function CategoryRow({ category, onClick }) {
       <button
         type="button"
         onClick={onClick}
-        className="group w-full h-full text-left px-4 py-2.5 border-b border-slate-100 hover:bg-slate-50 transition focus:outline-none focus-visible:bg-slate-50"
+        className="group w-full h-full text-left px-4 py-2.5 border-b border-slate-100 hover:bg-slate-50 transition focus:outline-hidden focus-visible:bg-slate-50"
       >
         <div className="flex items-center gap-4">
           <div className="min-w-0 flex-1">
