@@ -315,4 +315,57 @@ RSpec.describe Clash::SincronizarCuenta do
       expect(yeti.fuente).to eq("api")
     end
   end
+
+  describe "player stats and clan" do
+    let(:player) do
+      {
+        "townHallLevel" => 15,
+        "trophies" => 5123, "bestTrophies" => 5600, "warStars" => 1450,
+        "expLevel" => 230, "donations" => 812, "donationsReceived" => 640,
+        "role" => "coLeader",
+        "clan" => {
+          "tag" => "#2PP", "name" => "Los Pibes",
+          "badgeUrls" => { "small" => "https://api-assets.clashofclans.com/badges/70/x.png",
+                           "medium" => "https://api-assets.clashofclans.com/badges/200/x.png" }
+        }
+      }
+    end
+
+    it "stores the player stats the API returns" do
+      described_class.new(cuenta, cliente: cliente_que_responde(player)).call
+
+      expect(cuenta.reload).to have_attributes(
+        trophies: 5123, best_trophies: 5600, war_stars: 1450,
+        exp_level: 230, donations: 812, donations_received: 640
+      )
+    end
+
+    it "stores the clan name, tag, role and medium badge" do
+      described_class.new(cuenta, cliente: cliente_que_responde(player)).call
+
+      expect(cuenta.reload).to have_attributes(
+        clan_name: "Los Pibes", clan_tag: "#2PP", clan_role: "coLeader",
+        clan_badge_url: "https://api-assets.clashofclans.com/badges/200/x.png"
+      )
+    end
+
+    it "clears the clan when the player left it" do
+      cuenta.update!(clan_name: "Old clan", clan_tag: "#OLD", clan_role: "member",
+                     clan_badge_url: "https://example.com/old.png")
+
+      described_class.new(cuenta, cliente: cliente_que_responde(player.except("clan", "role"))).call
+
+      expect(cuenta.reload).to have_attributes(
+        clan_name: nil, clan_tag: nil, clan_role: nil, clan_badge_url: nil
+      )
+    end
+
+    it "keeps the previous stats when the API omits them" do
+      cuenta.update!(trophies: 4000, war_stars: 900)
+
+      described_class.new(cuenta, cliente: cliente_que_responde({ "townHallLevel" => 15 })).call
+
+      expect(cuenta.reload).to have_attributes(trophies: 4000, war_stars: 900)
+    end
+  end
 end

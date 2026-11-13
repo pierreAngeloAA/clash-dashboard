@@ -12,6 +12,7 @@ import {
   syncAccount,
   updateAccount,
 } from '../services/accountsService';
+import PlayerStats from '../components/PlayerStats';
 
 const initialsOf = (name) => {
   if (!name) return '?';
@@ -132,6 +133,8 @@ export default function UserDetail() {
           )}
         </div>
       </section>
+
+      <PlayerStats account={account} />
 
       {resultado && (
         <ResultadoSincronizacion

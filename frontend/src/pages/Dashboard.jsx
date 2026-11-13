@@ -9,6 +9,7 @@ import AccountFormModal from '../components/AccountFormModal';
 import { useAccountList } from '../hooks/useAccountList';
 import { useAuth } from '../context/AuthContext';
 import { createAccount, syncAllAccounts } from '../services/accountsService';
+import { formatStat } from '../utils/playerStats';
 
 export default function Dashboard() {
   // La lista ya trae el progreso de cada cuenta. Antes habia que pedir el
@@ -321,6 +322,15 @@ function AccountCard({ account }) {
             {account.tagCoc || 'sin tag'}
           </p>
         </div>
+        {account.clan?.badgeUrl && (
+          <img
+            src={account.clan.badgeUrl}
+            alt={account.clan.name}
+            title={account.clan.name}
+            className="h-7 w-7 shrink-0"
+            loading="lazy"
+          />
+        )}
       </div>
 
       <div className="mt-2.5 flex items-center gap-2">
@@ -341,6 +351,15 @@ function AccountCard({ account }) {
           {pct.toFixed(0)}%
         </span>
       </div>
+
+      {account.stats?.trophies != null && (
+        <p className="mt-2 flex gap-3 text-[11px] text-slate-500 tabular-nums">
+          <span title="Trophies">🏆 {formatStat(account.stats.trophies)}</span>
+          {account.stats.warStars != null && (
+            <span title="War stars">⭐ {formatStat(account.stats.warStars)}</span>
+          )}
+        </p>
+      )}
     </Link>
   );
 }

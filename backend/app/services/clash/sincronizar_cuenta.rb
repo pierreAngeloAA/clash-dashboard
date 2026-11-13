@@ -66,6 +66,7 @@ module Clash
       # los elementos recien habilitados entren en esta misma pasada y reciban
       # su nivel real, en vez de quedar en cero hasta la proxima.
       actualizar_ayuntamiento(jugador, informe)
+      update_player_stats(jugador)
 
       account.account_items.includes(:game_item).find_each do |item|
         clasificar(item, indice, informe)
@@ -108,6 +109,36 @@ module Clash
 
       informe.ayuntamiento = { antes: anterior, ahora: nivel }
       informe.elementos_nuevos = account.poblar_inventario
+    end
+
+    # Stats the API sends alongside the progress. A missing value keeps what was
+    # stored: a partial response must not wipe numbers the account already had.
+    PLAYER_STATS = {
+      trophies: "trophies",
+      best_trophies: "bestTrophies",
+      war_stars: "warStars",
+      exp_level: "expLevel",
+      donations: "donations",
+      donations_received: "donationsReceived"
+    }.freeze
+
+    def update_player_stats(player)
+      stats = PLAYER_STATS.filter_map { |column, key| [ column, player[key] ] if player.key?(key) }.to_h
+      account.update!(stats.merge(clan_attributes(player)))
+    end
+
+    # Unlike the stats, an absent clan is meaningful: the player left it, so the
+    # stored clan is cleared instead of kept.
+    def clan_attributes(player)
+      clan = player["clan"]
+      return { clan_name: nil, clan_tag: nil, clan_role: nil, clan_badge_url: nil } if clan.blank?
+
+      {
+        clan_name: clan["name"],
+        clan_tag: clan["tag"],
+        clan_role: player["role"],
+        clan_badge_url: clan.dig("badgeUrls", "medium") || clan.dig("badgeUrls", "small")
+      }
     end
 
     def clasificar(item, indice, informe)

@@ -40,6 +40,33 @@ RSpec.describe "Api::V1::Accounts" do
       )
     end
 
+    it "includes the player stats and clan" do
+      create(:account, nombre: "Pierre", trophies: 5123, best_trophies: 5600,
+        war_stars: 1450, exp_level: 230, donations: 812, donations_received: 640,
+        clan_name: "Los Pibes", clan_tag: "#2PP", clan_role: "coLeader",
+        clan_badge_url: "https://example.com/badge.png")
+
+      get "/api/v1/accounts"
+
+      account = response.parsed_body["accounts"].first
+      expect(account["stats"]).to eq(
+        "trophies" => 5123, "bestTrophies" => 5600, "warStars" => 1450,
+        "expLevel" => 230, "donations" => 812, "donationsReceived" => 640
+      )
+      expect(account["clan"]).to eq(
+        "name" => "Los Pibes", "tag" => "#2PP", "role" => "coLeader",
+        "badgeUrl" => "https://example.com/badge.png"
+      )
+    end
+
+    it "returns a null clan for an account without one" do
+      cuenta
+
+      get "/api/v1/accounts"
+
+      expect(response.parsed_body["accounts"].first["clan"]).to be_nil
+    end
+
     it "marca como no sincronizable a la cuenta sin tag" do
       cuenta
 
