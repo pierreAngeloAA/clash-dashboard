@@ -95,7 +95,7 @@ export default function AccountFormModal({ account, onGuardar, onClose }) {
           </p>
         )}
 
-        <div className="grid grid-cols-[1fr,auto] gap-3">
+        <div className="grid grid-cols-[1fr_auto] gap-3">
           <Campo
             id="tag_coc"
             etiqueta="Tag de Clash"
@@ -162,7 +162,7 @@ function Campo({ id, etiqueta, ayuda, className = '', ...props }) {
       <input
         id={id}
         {...props}
-        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-brand-500"
       />
       {ayuda && <p className="mt-1 text-xs text-slate-400">{ayuda}</p>}
     </div>

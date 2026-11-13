@@ -59,7 +59,7 @@ export default function ClanSearchPanel({ tag, onSelectPlayer }) {
       {clan && (
         <div className="space-y-5">
           {/* Header */}
-          <section className="bg-gradient-to-br from-brand-600 to-brand-800 text-white rounded-2xl p-6 shadow-card">
+          <section className="bg-linear-to-br from-brand-600 to-brand-800 text-white rounded-2xl p-6 shadow-card">
             <div className="flex flex-col sm:flex-row items-start gap-5">
               {clan.badgeUrls?.medium && (
                 <img

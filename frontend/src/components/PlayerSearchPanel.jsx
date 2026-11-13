@@ -135,7 +135,7 @@ export default function PlayerSearchPanel({ tag }) {
       {data && sections && (
         <div className="space-y-5">
           {/* Header */}
-          <section className="bg-gradient-to-br from-brand-600 to-brand-800 text-white rounded-2xl p-6 shadow-card">
+          <section className="bg-linear-to-br from-brand-600 to-brand-800 text-white rounded-2xl p-6 shadow-card">
             <div className="flex flex-col sm:flex-row items-start gap-5">
               {data.league?.iconUrls?.medium ? (
                 <img
@@ -144,7 +144,7 @@ export default function PlayerSearchPanel({ tag }) {
                   className="h-24 w-24 rounded-2xl bg-white/15 p-2"
                 />
               ) : (
-                <div className="h-24 w-24 rounded-2xl bg-white/15 backdrop-blur grid place-items-center text-4xl font-bold">
+                <div className="h-24 w-24 rounded-2xl bg-white/15 backdrop-blur-sm grid place-items-center text-4xl font-bold">
                   {data.townHallLevel ?? '?'}
                 </div>
               )}
@@ -166,7 +166,7 @@ export default function PlayerSearchPanel({ tag }) {
                       <img
                         src={data.clan.badgeUrls.small}
                         alt=""
-                        className="h-7 w-7 rounded bg-white/10 p-0.5"
+                        className="h-7 w-7 rounded-sm bg-white/10 p-0.5"
                       />
                     )}
                     <p className="text-sm">

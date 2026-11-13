@@ -160,14 +160,14 @@ function SearchBox({ placeholder, value, onChange, onSubmit }) {
   return (
     <form
       onSubmit={onSubmit}
-      className="flex gap-1.5 bg-white/90 backdrop-blur rounded-lg border border-slate-200 shadow-card p-1.5"
+      className="flex gap-1.5 bg-white/90 backdrop-blur-sm rounded-lg border border-slate-200 shadow-card p-1.5"
     >
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="flex-1 min-w-0 rounded-md px-2.5 py-1.5 text-sm bg-transparent placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40"
+        className="flex-1 min-w-0 rounded-md px-2.5 py-1.5 text-sm bg-transparent placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-brand-500/40"
       />
       <button
         type="submit"
