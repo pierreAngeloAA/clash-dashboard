@@ -75,6 +75,7 @@ module Clash
       # Lo que la API trajo y el catalogo no reconoce. Suele ser contenido nuevo
       # del juego, y es la señal de que el catalogo quedo viejo.
       informe.desconocidos = indice.keys - nombres_mapeados
+      AccountSnapshot.record!(account)
       informe
     end
 

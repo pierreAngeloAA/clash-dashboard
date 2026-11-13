@@ -28,6 +28,13 @@ export function fetchAccount(id) {
   return getJson(`/accounts/${id}`);
 }
 
+// One point per synced day over the last year, oldest first.
+export async function fetchAccountHistory(id) {
+  const { snapshots } = await getJson(`/accounts/${id}/history`);
+
+  return snapshots;
+}
+
 /**
  * Alta de una cuenta. Exige sesion.
  *

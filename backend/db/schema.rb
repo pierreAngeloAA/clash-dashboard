@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_13_145023) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_13_145420) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -36,6 +36,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_145023) do
     t.check_constraint "current_level >= 0 AND current_level <= max_level", name: "account_items_current_level_dentro_de_rango"
     t.check_constraint "indice > 0", name: "account_items_indice_positivo"
     t.check_constraint "max_level > 0", name: "account_items_max_level_positivo"
+  end
+
+  create_table "account_snapshots", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.date "taken_on", null: false
+    t.decimal "progress_pct", precision: 5, scale: 2, null: false
+    t.integer "town_hall"
+    t.integer "trophies"
+    t.integer "war_stars"
+    t.integer "donations"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "taken_on"], name: "index_account_snapshots_on_account_id_and_taken_on", unique: true
   end
 
   create_table "accounts", force: :cascade do |t|
@@ -124,6 +137,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_145023) do
   add_foreign_key "account_items", "account_items", column: "heroe_id"
   add_foreign_key "account_items", "accounts"
   add_foreign_key "account_items", "game_items"
+  add_foreign_key "account_snapshots", "accounts", on_delete: :cascade
   add_foreign_key "game_item_levels", "game_items"
   add_foreign_key "game_item_town_halls", "game_items"
 end

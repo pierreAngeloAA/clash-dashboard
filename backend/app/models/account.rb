@@ -1,5 +1,6 @@
 class Account < ApplicationRecord
   has_many :account_items, dependent: :destroy
+  has_many :snapshots, class_name: "AccountSnapshot", dependent: :delete_all
   has_many :game_items, through: :account_items
 
   # Un modelo por seccion del Sheet, todos colgando de la cuenta.

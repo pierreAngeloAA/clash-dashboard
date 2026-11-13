@@ -34,6 +34,7 @@ Rails.application.routes.draw do
         # Traen el progreso real desde la API oficial. Son POST y no GET porque
         # modifican las cuentas.
         post :sincronizar, on: :member
+        get :history, on: :member
         # Sobre la coleccion: sincroniza de una vez todas las que tienen tag.
         post :sincronizar, on: :collection, action: :sincronizar_todas
         # Anidado porque un elemento no significa nada fuera de su cuenta, y asi

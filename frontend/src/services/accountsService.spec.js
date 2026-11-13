@@ -3,6 +3,7 @@ import {
   createAccount,
   deleteAccount,
   fetchAccount,
+  fetchAccountHistory,
   fetchAccountList,
   syncAccount,
   syncAllAccounts,
@@ -45,6 +46,23 @@ describe('cliente de las cuentas', () => {
 
     it('devuelve una lista vacia cuando no hay cuentas', async () => {
       await expect(fetchAccountList()).resolves.toEqual([]);
+    });
+  });
+
+  describe('fetchAccountHistory', () => {
+    it('requests the history by account id', async () => {
+      responder({ snapshots: [] });
+
+      await fetchAccountHistory(7);
+
+      expect(urlLlamada()).toBe('/api/v1/accounts/7/history');
+    });
+
+    it('returns the snapshots, not the envelope', async () => {
+      const snapshots = [{ date: '2026-11-01', progressPct: 80 }];
+      responder({ snapshots });
+
+      await expect(fetchAccountHistory(7)).resolves.toEqual(snapshots);
     });
   });
 
